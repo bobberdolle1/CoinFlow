@@ -22,19 +22,25 @@
 
 **Key Innovation:** 100% button-based interface — no manual typing required! Get conversions in just 2-3 clicks.
 
-### 🚀 User Experience
+### 🚀 User Experience (v2.0)
 
 **Complete button-based workflow:**
 
-1. **Quick Convert** → Select FROM currency (button) → Select TO currency (button) → Choose amount (preset buttons: 10/50/100/500/1000/5000) → **Instant result!**
+1. **Quick Convert** → Select FROM currency → Select TO currency → Choose amount (presets: 10/50/100/500/1000/5000) → **Instant result!**
 
-2. **Compare Rates** → Select crypto (button) → Get live prices from 5+ exchanges with spread analysis
+2. **Rate Charts** → Select crypto → Select period (7/30/90/365 days) → **See price chart for 1 unit** (e.g., 1 BTC = $67,234)
 
-3. **Rate Forecast** → Select crypto (button) → Get AI-powered 7-day prediction with trend visualization
+3. **Rate Forecast** → Select crypto → **Get AI prediction for 1 unit** (7-day forecast with trend)
 
-4. **Charts** → Select crypto (button) → Get 30-day historical chart with statistics
+4. **Compare Rates** → Select crypto → **See prices for 1 unit across 5+ exchanges** with best price recommendation
+
+5. **Price Alerts** → Set target price → Get instant notifications when reached
+
+6. **History & Stats** → View conversion history, favorites, personal statistics
 
 **No typing. No copy-paste. Just buttons!** 🎯
+
+**New in v2.0:** Charts, forecasts, and comparisons now display **price for 1 unit** by default (industry standard UX), making it easy to compare assets like on CoinGecko or TradingView.
 
 ### ✨ Key Features
 
@@ -83,22 +89,83 @@
 - **Russian 🇷🇺:** Полный перевод
 - **Easy Language Switch:** Change anytime in settings
 
+### 🆕 What's New in v2.0
+
+**Major Architectural Improvements:**
+- 🏗️ **Modular Structure**: Separated into `services/`, `handlers/`, `database/`, `utils/` packages
+- 💾 **SQLAlchemy Database**: Persistent storage for users, alerts, history, and favorites (replaces shelve)
+- ⚡ **Smart Caching**: 60-second TTL cache for exchange rates reduces API calls
+- 🔒 **Enhanced Security**: Replaced `eval()` with AST-based safe calculator
+- 📊 **Advanced Metrics**: Comprehensive bot usage tracking and analytics
+- 🚀 **Async Support**: Asynchronous exchange rate fetching for better performance
+- 🐳 **Docker Ready**: Full containerization with `docker-compose.yml`
+- 📝 **Professional Logging**: Rotating file logs with configurable levels
+
+**New Features:**
+- ⭐ **Favorites System**: Save frequently used currencies for quick access
+- 📜 **Conversion History**: Track all conversions with timestamps (last 10 visible)
+- 💬 **Inline Mode**: Quick conversions without opening bot (`@bot 100 USD to EUR`)
+- 📅 **Custom Chart Periods**: Choose from 7/30/90/365 days
+- 📊 **User Statistics**: View usage stats, popular pairs, total conversions
+- 🔘 **Button-based Commands**: All functions accessible via buttons (History, Stats, Favorites)
+- 🔄 **Auto-reconnect**: Improved reliability with automatic recovery
+
+**UX Improvements:**
+- 📊 **Price for 1 Unit**: Charts, forecasts, and comparisons now show price per 1 unit (e.g., 1 BTC)
+- 🎯 **Streamlined Flow**: No amount input for charts/forecasts (only for conversions)
+- 📱 **Industry Standard**: Follows UX patterns from CoinGecko, TradingView, Binance
+
 ### 🛠️ Tech Stack
 
-- **Language:** Python 3.11+
-- **Bot Framework:** `python-telegram-bot` ^22.5 (latest async API)
-- **Financial Data:** `yfinance` ^0.2 (Yahoo Finance API)
-- **HTTP Client:** `requests` ^2.32 (exchange API connections)
-- **Data Visualization:** `matplotlib` ^3.9 (chart generation)
-- **Machine Learning:** 
-  - `statsmodels` ^0.14 (ARIMA forecasting)
-  - `scikit-learn` ^1.5 (Linear Regression)
-  - `numpy` ^2.0 (numerical computations)
-- **Task Scheduling:** `apscheduler` ^3.10 (background jobs)
-- **Configuration:** `python-dotenv` ^1.0 (environment variables)
-- **Exchange Integration:** `bestchange-api` ^3.1 (BestChange rates)
-- **Data Storage:** `shelve` (built-in, persistent alerts storage)
-- **Dependency Management:** `poetry` (modern Python packaging)
+**Core:**
+- Python 3.11+
+- `python-telegram-bot` ^22.5 (async API)
+- `sqlalchemy` ^2.0 (ORM for database)
+- `aiohttp` ^3.9 (async HTTP client)
+
+**Data & Analytics:**
+- `yfinance` ^0.2 (market data)
+- `matplotlib` ^3.9 (charts)
+- `statsmodels` ^0.14 (ARIMA)
+- `scikit-learn` ^1.5 (ML)
+- `numpy` ^2.0 (computations)
+
+**Infrastructure:**
+- `apscheduler` ^3.10 (background tasks)
+- `python-dotenv` ^1.0 (config)
+- `bestchange-api` ^3.1 (exchange rates)
+- `requests` ^2.32 (HTTP)
+- Docker & docker-compose
+
+**Dependency Management:** Poetry
+
+### 🎮 Bot Commands & Features
+
+**Main Menu Buttons:**
+- ⚡ **Quick Convert**: Currency conversion with amount presets
+- 📊 **Rate Charts**: Historical price charts (7/30/90/365 days) for 1 unit
+- 🔮 **Rate Forecast**: AI price predictions for 1 unit (7-day ahead)
+- ⚖️ **Compare Rates**: Cross-exchange price comparison for 1 unit
+- 🧮 **Calculator**: Math expressions with currency conversion
+- 🔔 **Notifications**: Manage price alerts
+- ⭐ **Favorites**: Quick access to saved currencies
+- 📜 **History**: View last 10 conversions
+- 📊 **Statistics**: Personal usage stats and popular pairs
+- ⚙️ **Settings**: Bot configuration and language
+
+**Slash Commands (also available as buttons):**
+- `/start` - Start/restart the bot
+- `/help` - Show help message
+- `/stats` - View your statistics
+- `/history` - Conversion history
+- `/favorites` - Manage favorites
+- `/cancel` - Cancel current operation
+
+**Inline Mode:**
+```
+@your_bot_username 100 USD to EUR
+```
+Get instant conversion in any chat!
 
 ### ⚙️ Installation & Usage
 
@@ -177,19 +244,25 @@ python main.py
 
 **Главная инновация:** 100% кнопочный интерфейс — никакого ручного ввода! Конвертация за 2-3 клика.
 
-### 🚀 Пользовательский опыт
+### 🚀 Пользовательский опыт (v2.0)
 
 **Полностью кнопочный workflow:**
 
-1. **Быстрая конвертация** → Выбор валюты ОТ (кнопка) → Выбор валюты В (кнопка) → Выбор суммы (пресеты: 10/50/100/500/1000/5000) → **Мгновенный результат!**
+1. **Быстрая конвертация** → Выбор валюты ОТ → Выбор валюты В → Выбор суммы (пресеты: 10/50/100/500/1000/5000) → **Мгновенный результат!**
 
-2. **Сравнение курсов** → Выбор крипты (кнопка) → Получение актуальных цен с 5+ бирж с анализом спреда
+2. **Графики курсов** → Выбор крипты → Выбор периода (7/30/90/365 дней) → **График цены 1 единицы** (например, 1 BTC = $67,234)
 
-3. **Прогноз курса** → Выбор крипты (кнопка) → Получение ИИ-прогноза на 7 дней с визуализацией тренда
+3. **Прогноз курса** → Выбор крипты → **ИИ-прогноз для 1 единицы** (на 7 дней с трендом)
 
-4. **Графики** → Выбор крипты (кнопка) → Получение графика за 30 дней со статистикой
+4. **Сравнение курсов** → Выбор крипты → **Цены 1 единицы на 5+ биржах** с рекомендацией лучшей цены
+
+5. **Ценовые уведомления** → Установка целевой цены → Мгновенные уведомления при достижении
+
+6. **История и статистика** → История конвертаций, избранное, личная статистика
 
 **Никакого набора текста. Никакого копипаста. Только кнопки!** 🎯
+
+**Новое в v2.0:** Графики, прогнозы и сравнения теперь показывают **цену за 1 единицу** по умолчанию (стандарт индустрии), что упрощает сравнение активов как на CoinGecko или TradingView.
 
 ### ✨ Ключевые особенности
 
