@@ -296,7 +296,7 @@ python main.py
 
 5. **Запустите бота:**
    ```bash
-   poetry run python coinflow.py
+   poetry run python main.py
    ```
 
 6. **Начните общаться с ботом в Telegram!**
@@ -313,7 +313,7 @@ poetry update
 Активация виртуального окружения:
 ```bash
 poetry shell
-python coinflow.py
+python main.py
 ```
 
 ---
