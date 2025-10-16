@@ -1,8 +1,8 @@
-# 🪙 CoinFlow Bot - Ultimate Edition
+# 🪙 CoinFlow Bot v2.0 - Ultimate Edition
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-2.0-orange.svg)
 
-**Полнофункциональный Telegram-бот для конвертации валют и анализа криптовалют с интуитивным интерфейсом на кнопках**
+**Advanced Telegram bot for currency conversion and cryptocurrency analysis with professional architecture**
 
 [English](#english) | [Русский](#русский)
 
@@ -141,7 +141,7 @@
 
 5. **Run the bot:**
    ```bash
-   poetry run python coinflow.py
+   poetry run python main.py
    ```
 
 6. **Start chatting with your bot in Telegram!**
@@ -158,7 +158,7 @@ poetry update
 Activate virtual environment:
 ```bash
 poetry shell
-python coinflow.py
+python main.py
 ```
 
 ---

@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  coinflow-bot:
+    build: .
+    container_name: coinflow-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - DATABASE_URL=sqlite:///data/coinflow.db
+      - LOG_FILE=/app/logs/coinflow.log
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - coinflow-network
+
+networks:
+  coinflow-network:
+    driver: bridge
