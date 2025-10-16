@@ -43,13 +43,13 @@ class MessageHandlers:
         
         # Main menu items
         if text == get_text(user.lang, 'quick_convert'):
-            await self.bot.callback_handlers.start_conversion(update, user)
+            await self.bot.callback_handlers.start_conversion(update, user, context)
         elif text == get_text(user.lang, 'rate_charts'):
-            await self.bot.callback_handlers.start_chart_selection(update, user)
+            await self.bot.callback_handlers.start_chart_selection(update, user, context)
         elif text == get_text(user.lang, 'rate_prediction'):
-            await self.bot.callback_handlers.start_prediction_selection(update, user)
+            await self.bot.callback_handlers.start_prediction_selection(update, user, context)
         elif text == get_text(user.lang, 'compare_rates'):
-            await self.bot.callback_handlers.start_comparison_selection(update, user)
+            await self.bot.callback_handlers.start_comparison_selection(update, user, context)
         elif text == get_text(user.lang, 'calculator'):
             await update.message.reply_text(
                 get_text(user.lang, 'calculator_mode'),
