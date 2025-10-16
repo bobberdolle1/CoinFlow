@@ -1,10 +1,10 @@
 """Database repository for CoinFlow bot."""
 
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import create_engine, func
+from sqlalchemy.orm import Session, sessionmaker, scoped_session
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Tuple
-from .models import Base, User, Alert, ConversionHistory, Favorite, engine
+from .models import Base, User, Alert, ConversionHistory, Favorite
 
 
 class DatabaseRepository:
