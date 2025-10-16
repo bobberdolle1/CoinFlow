@@ -1,0 +1,9 @@
+.env
+
+# Poetry
+.venv
+dist
+build
+
+# Database
+alerts.db
