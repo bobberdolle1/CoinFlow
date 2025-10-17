@@ -172,6 +172,7 @@ Get instant conversion in any chat!
 Complete guides for deployment and troubleshooting:
 
 - [📚 Documentation Index](./docs/README.md) - All documentation ([Russian version](./docs/README.md#russian))
+- [📦 Installation Guide](./docs/INSTALLATION.md) - Complete installation from scratch ([Russian version](./docs/INSTALLATION.md#русский))
 - [🚀 Quick Start Guide](./docs/QUICK_START.md) - Get started in 5 minutes
 - [🐳 Docker Guide](./docs/DOCKER_GUIDE.md) - Deploy with Docker
 - [🚀 Deployment Guide](./docs/DEPLOYMENT.md) - Production setup ([Russian version](./docs/DEPLOYMENT.md#russian))
@@ -180,6 +181,8 @@ Complete guides for deployment and troubleshooting:
 ---
 
 ### ⚙️ Installation & Usage
+
+> 📦 **New to setup?** Check our [Complete Installation Guide](./docs/INSTALLATION.md) for step-by-step instructions including Python, Poetry, and Docker installation from scratch!
 
 #### **Prerequisites**
 - Python 3.11 or higher
@@ -345,6 +348,7 @@ python main.py
 Полные руководства по развертыванию и решению проблем:
 
 - [📚 Содержание документации](./docs/README.md#russian) - Вся документация
+- [📦 Руководство по установке](./docs/INSTALLATION.md#русский) - Полная установка с нуля
 - [🚀 Краткое руководство](./docs/QUICK_START.md) - Запустите бота за 5 минут
 - [🐳 Руководство по Docker](./docs/DOCKER_GUIDE.md) - Развертывание с Docker
 - [🚀 Руководство по развертыванию](./docs/DEPLOYMENT.md#russian) - Настройка продакшена
@@ -353,6 +357,8 @@ python main.py
 ---
 
 ### ⚙️ Установка и запуск
+
+> 📦 **Впервые устанавливаете?** Смотрите [Полное руководство по установке](./docs/INSTALLATION.md#русский) с пошаговыми инструкциями, включая установку Python, Poetry и Docker с нуля!
 
 #### **Требования**
 - Python 3.11 или выше
