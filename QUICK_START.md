@@ -2,13 +2,21 @@
 
 Get your CoinFlow bot running in 5 minutes!
 
-## Prerequisites
+[English](#english) | [Русский](#русский)
+
+---
+
+<a name="english"></a>
+
+## 🇬🇧 English
+
+### Prerequisites
 
 - Python 3.11+
-- Poetry installed
-- Telegram Bot Token
+- Poetry (dependency manager)
+- Telegram Bot Token from [@BotFather](https://t.me/BotFather)
 
-## Installation
+### Installation (Without Docker)
 
 ### 1. Clone & Install
 
@@ -119,17 +127,149 @@ CHART_DPI=150
 LOG_LEVEL=INFO
 ```
 
-## Next Steps
+### Next Steps
 
-- Read [README_V2.md](README_V2.md) for full documentation
+- Read [README.md](README.md) for full documentation
 - Check [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) if upgrading from v1.0
-- Explore the modular codebase in `coinflow/` directory
+- Explore [docs/](docs/) for detailed guides
 
-## Need Help?
+### Need Help?
 
-- 📖 Full docs: [README_V2.md](README_V2.md)
-- 🐛 Issues: [GitHub Issues](https://github.com/bobberdolle1/CoinFlow/issues)
-- 💬 Questions: Open a discussion
+- 📖 [Full Documentation](README.md)
+- 🐳 [Docker Guide](docs/DOCKER_GUIDE.md)
+- 🚀 [Deployment Guide](docs/DEPLOYMENT.md)
+- 🐛 [GitHub Issues](https://github.com/bobberdolle1/CoinFlow/issues)
+
+---
+
+<a name="русский"></a>
+
+## 🇷🇺 Русский
+
+### Требования
+
+- Python 3.11+
+- Poetry (менеджер зависимостей)
+- Токен Telegram-бота от [@BotFather](https://t.me/BotFather)
+
+### Установка (без Docker)
+
+#### 1. Клонирование и установка
+
+```bash
+git clone https://github.com/bobberdolle1/CoinFlow.git
+cd CoinFlow
+poetry install
+```
+
+#### 2. Настройка
+
+```bash
+cp .env.example .env
+```
+
+Отредактируйте `.env` и добавьте токен:
+```env
+TELEGRAM_BOT_TOKEN='ваш_токен_от_botfather'
+```
+
+#### 3. Запуск
+
+```bash
+poetry run python main.py
+```
+
+Вот и всё! Бот запущен! 🎉
+
+### Docker (альтернатива)
+
+Предпочитаете Docker? Ещё проще:
+
+```bash
+# 1. Клонирование
+git clone https://github.com/bobberdolle1/CoinFlow.git
+cd CoinFlow
+
+# 2. Настройка
+cp .env.example .env
+# Отредактируйте .env с вашим токеном
+
+# 3. Запуск
+docker-compose up -d
+```
+
+### Первые шаги
+
+1. **Запустите бота** в Telegram: `/start`
+2. **Выберите язык**: English или Русский
+3. **Попробуйте конвертацию**: Нажмите "⚡ Быстрая конвертация"
+4. **Изучите функции**:
+   - 📊 Графики курсов
+   - 🔮 Прогноз курса
+   - ⚖️ Сравнение курсов
+   - 🧮 Калькулятор
+   - И многое другое!
+
+### Основные команды
+
+| Команда | Описание |
+|---------|-------------|
+| `/start` | Инициализация/перезапуск бота |
+| `/help` | Показать помощь |
+| `/stats` | Статистика использования |
+| `/history` | История конвертаций |
+| `/favorites` | Управление избранным |
+
+### Inline-режим
+
+Напишите в любом чате:
+```
+@имя_вашего_бота 100 USD to EUR
+```
+Получите мгновенный результат!
+
+### Решение проблем
+
+#### Модуль не найден
+```bash
+poetry install
+```
+
+#### Бот не отвечает
+- Проверьте токен в `.env`
+- Проверьте интернет-соединение
+- Просмотрите логи: `tail -f coinflow.log`
+
+### Настройка
+
+Настройте в `.env`:
+
+```env
+# Длительность кэша (секунды)
+CACHE_TTL_SECONDS=60
+
+# Интервал проверки алертов (минуты)  
+ALERT_CHECK_INTERVAL=5
+
+# Качество графиков
+CHART_DPI=150
+
+# Логирование
+LOG_LEVEL=INFO
+```
+
+### Дальнейшие шаги
+
+- Прочтите [README.md](README.md) для полной документации
+- Просмотрите [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) при обновлении с v1.0
+- Изучите [docs/](docs/) для подробных гайдов
+
+### Нужна помощь?
+
+- 📖 [Полная документация](README.md)
+- 🐳 [Гайд по Docker](docs/DOCKER_GUIDE.md)
+- 🚀 [Гайд по деплою](docs/DEPLOYMENT.md)
+- 🐛 [GitHub Issues](https://github.com/bobberdolle1/CoinFlow/issues)
 
 ---
 
