@@ -167,6 +167,18 @@
 ```
 Get instant conversion in any chat!
 
+### 📚 Documentation
+
+Complete guides for deployment and troubleshooting:
+
+- [📚 Documentation Index](./docs/README.md) - All documentation ([Russian version](./docs/README.md#russian))
+- [🚀 Quick Start Guide](./docs/QUICK_START.md) - Get started in 5 minutes
+- [🐳 Docker Guide](./docs/DOCKER_GUIDE.md) - Deploy with Docker
+- [🚀 Deployment Guide](./docs/DEPLOYMENT.md) - Production setup ([Russian version](./docs/DEPLOYMENT.md#russian))
+- [🔧 Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues ([Russian version](./docs/TROUBLESHOOTING.md#russian))
+
+---
+
 ### ⚙️ Installation & Usage
 
 #### **Prerequisites**
@@ -327,6 +339,18 @@ python main.py
 - **Интеграция с биржами:** `bestchange-api` ^3.1 (курсы BestChange)
 - **Хранение данных:** `shelve` (встроенное, постоянное хранение алертов)
 - **Управление зависимостями:** `poetry` (современная упаковка Python)
+
+### 📚 Документация
+
+Полные руководства по развертыванию и решению проблем:
+
+- [📚 Содержание документации](./docs/README.md#russian) - Вся документация
+- [🚀 Краткое руководство](./docs/QUICK_START.md) - Запустите бота за 5 минут
+- [🐳 Руководство по Docker](./docs/DOCKER_GUIDE.md) - Развертывание с Docker
+- [🚀 Руководство по развертыванию](./docs/DEPLOYMENT.md#russian) - Настройка продакшена
+- [🔧 Решение проблем](./docs/TROUBLESHOOTING.md#russian) - Типичные проблемы
+
+---
 
 ### ⚙️ Установка и запуск
 
