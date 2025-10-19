@@ -1,6 +1,11 @@
 """News service for CoinFlow bot."""
 
-import feedparser
+try:
+    import feedparser
+    FEEDPARSER_AVAILABLE = True
+except ImportError:
+    FEEDPARSER_AVAILABLE = False
+    
 import re
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
@@ -89,6 +94,10 @@ class NewsService:
         Returns:
             List of news items
         """
+        if not FEEDPARSER_AVAILABLE:
+            logger.warning("feedparser not installed, news service unavailable")
+            return []
+        
         cache_key = f"news_{'_'.join(sources or self.feeds.keys())}"
         
         # Check cache

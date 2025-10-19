@@ -1,7 +1,8 @@
 """Database models for CoinFlow bot."""
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, JSON, create_engine
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, JSON, ForeignKey, create_engine
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from datetime import datetime
 

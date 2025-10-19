@@ -80,7 +80,7 @@ class StockService:
         Args:
             cache_ttl: Cache time-to-live in seconds (default: 5 minutes)
         """
-        self.cache = Cache(ttl=cache_ttl)
+        self.cache = Cache(ttl_seconds=cache_ttl)
         logger.info("StockService initialized")
     
     def get_global_stock(self, ticker: str) -> Optional[Dict]:

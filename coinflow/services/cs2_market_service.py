@@ -75,7 +75,7 @@ class CS2MarketService:
         Args:
             cache_ttl: Cache time-to-live in seconds (default: 5 minutes)
         """
-        self.cache = Cache(ttl=cache_ttl)
+        self.cache = Cache(ttl_seconds=cache_ttl)
         logger.info("CS2MarketService initialized")
     
     def get_item_price_steam(self, item_name: str) -> Optional[float]:

@@ -27,25 +27,63 @@ class AIService:
         logger.info(f"AI Service initialized with model: {model}")
     
     async def check_availability(self) -> bool:
-        """Check if Ollama is running and model is available."""
+        """
+        Check if Ollama service is available.
+        
+        Returns:
+            True if available, False otherwise
+        """
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"{self.ollama_url}/api/tags", timeout=aiohttp.ClientTimeout(total=5)) as response:
                     if response.status == 200:
+                        # Check if model is available
                         data = await response.json()
-                        models = [m['name'] for m in data.get('models', [])]
-                        self.available = self.model in models
+                        models = data.get('models', [])
+                        model_names = [m.get('name', '') for m in models]
                         
-                        if not self.available:
-                            logger.warning(f"Model {self.model} not found. Available: {models}")
-                            logger.info(f"Run: ollama pull {self.model}")
+                        # If model not found, try to pull it
+                        if self.model not in model_names:
+                            logger.info(f"Model {self.model} not found, attempting to pull...")
+                            pulled = await self._pull_model()
+                            self.available = pulled
                         else:
                             logger.info(f"Model {self.model} is available")
+                            self.available = True
                         
                         return self.available
+                    return False
         except Exception as e:
             logger.error(f"Ollama not available: {e}")
             self.available = False
+            return False
+    
+    async def _pull_model(self) -> bool:
+        """
+        Pull the model from Ollama.
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            logger.info(f"Pulling model {self.model}... This may take a few minutes.")
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.ollama_url}/api/pull",
+                    json={'name': self.model},
+                    timeout=aiohttp.ClientTimeout(total=600)  # 10 minutes for download
+                ) as response:
+                    if response.status == 200:
+                        # Read stream to completion
+                        async for line in response.content:
+                            pass  # Just consume the stream
+                        logger.info(f"Model {self.model} pulled successfully")
+                        return True
+                    else:
+                        logger.error(f"Failed to pull model: {response.status}")
+                        return False
+        except Exception as e:
+            logger.error(f"Error pulling model: {e}")
             return False
     
     async def generate(self, prompt: str, system_prompt: Optional[str] = None, 

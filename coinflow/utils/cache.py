@@ -78,3 +78,7 @@ class CurrencyCache:
                 'valid_entries': valid,
                 'expired_entries': total - valid
             }
+
+
+# Alias for backward compatibility
+Cache = CurrencyCache
