@@ -155,6 +155,14 @@
 - 🤖 **ML Predictions**: Short-term movement forecasts
 - 🎯 **Confidence Scores**: Reliability indicators
 
+**🔐 Admin Panel**
+- 📊 **Statistics Dashboard**: Users, conversions, alerts, portfolio analytics
+- 📢 **Broadcast System**: Send announcements to all users
+- 🖼 **Media Support**: Text, photo, video, document broadcasts with captions
+- 📋 **History Tracking**: View all sent announcements
+- 🔒 **Access Control**: Admin-only access via ADMIN_IDS
+- 📈 **Detailed Metrics**: Activity tracking (24h/7d/30d), language distribution
+
 ### 🆕 What's New in v2.6
 
 **AI Assistant 🤖**
@@ -394,6 +402,12 @@ ollama pull llama3.2:3b
 - 🎮 **CS2 Skins**: CS2 item prices across Steam & Skinport marketplaces
 - 💼 **Portfolio**: Manage your multi-asset portfolio with real-time valuation
 - 📤 **Export**: Export your data to CSV or ZIP archive
+- 📰 **News**: Crypto news notifications and subscriptions
+- 📊 **Reports**: Analytics reports and weekly digests
+- 📊 **Analytics**: Advanced volatility, Sharpe ratio, correlation analysis
+- 🎯 **Trading Signals**: RSI, MACD, Moving Averages, Bollinger Bands
+- 🤖 **AI Assistant**: Chat with Llama 3.2 3B (local LLM)
+- 🌐 **Dashboard**: Web-based interactive dashboard
 - 🧮 **Calculator**: Math expressions with currency conversion
 - 🔔 **Notifications**: Manage price alerts
 - ⭐ **Favorites**: Quick access to saved currencies
@@ -401,13 +415,14 @@ ollama pull llama3.2:3b
 - 📊 **Statistics**: Personal usage stats and popular pairs
 - ⚙️ **Settings**: Bot configuration, language, and theme
 
-**Slash Commands (also available as buttons):**
+**Slash Commands:**
 - `/start` - Start/restart the bot
-- `/help` - Show help message
+- `/help` - Show help message with v2.7 features
 - `/stats` - View your statistics
 - `/history` - Conversion history
 - `/favorites` - Manage favorites
 - `/cancel` - Cancel current operation
+- `/admin` - Admin panel (admins only) 🔐
 
 **Inline Mode:**
 ```
@@ -459,9 +474,16 @@ Complete guides for deployment and troubleshooting:
    cp .env.example .env
    ```
    
-   Edit `.env` and add your bot token:
+   Edit `.env` and configure:
    ```env
    TELEGRAM_BOT_TOKEN='YOUR_ACTUAL_BOT_TOKEN_HERE'
+   
+   # Optional: Add your Telegram ID for admin access
+   ADMIN_IDS=YOUR_TELEGRAM_ID_HERE
+   
+   # Optional: Ollama AI settings (for AI Assistant)
+   OLLAMA_URL=http://localhost:11434
+   OLLAMA_MODEL=llama3.2:3b
    ```
 
 4. **Install dependencies:**
