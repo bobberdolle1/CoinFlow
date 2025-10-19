@@ -14,6 +14,127 @@ class MessageHandlers:
     def __init__(self, bot):
         self.bot = bot
     
+    async def handle_voice(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle voice messages."""
+        user_id = update.effective_user.id
+        user = self.bot.db.get_user(user_id)
+        
+        # Check if voice service is available
+        if not self.bot.voice_service.is_available():
+            await update.message.reply_text(
+                "❌ **Voice Recognition Not Available**\n\n"
+                "Required libraries are not installed.\n\n"
+                "Install with: `pip install SpeechRecognition pydub`\n\n"
+                "Also install ffmpeg for audio processing.",
+                parse_mode='Markdown'
+            )
+            return
+        
+        try:
+            # Show processing message
+            processing_msg = await update.message.reply_text(
+                "🎤 Processing voice message..."
+            )
+            
+            # Get voice file
+            voice = update.message.voice
+            voice_file = await context.bot.get_file(voice.file_id)
+            
+            # Download voice data
+            voice_bytes = await voice_file.download_as_bytearray()
+            
+            # Process voice message
+            result = await self.bot.voice_service.process_voice_message(
+                bytes(voice_bytes),
+                language=user.lang
+            )
+            
+            if not result.get('success'):
+                error_msg = result.get('message', 'Unknown error')
+                await processing_msg.edit_text(
+                    f"❌ **Recognition Failed**\n\n{error_msg}",
+                    parse_mode='Markdown'
+                )
+                return
+            
+            # Get recognized text
+            recognized_text = result.get('text', '')
+            
+            # Try to parse as conversion command
+            command = self.bot.voice_service.parse_conversion_command(recognized_text)
+            
+            if command:
+                # Execute conversion
+                await processing_msg.edit_text(
+                    f"🎤 Recognized: *{recognized_text}*\n\n"
+                    f"⏳ Converting {command['amount']} {command['from_currency']} to {command['to_currency']}...",
+                    parse_mode='Markdown'
+                )
+                
+                try:
+                    # Get conversion rate
+                    rate = self.bot.converter.get_rate(
+                        command['from_currency'],
+                        command['to_currency']
+                    )
+                    
+                    if not rate:
+                        await processing_msg.edit_text(
+                            f"🎤 Recognized: *{recognized_text}*\n\n"
+                            f"❌ Unable to get rate for {command['from_currency']}/{command['to_currency']}",
+                            parse_mode='Markdown'
+                        )
+                        return
+                    
+                    result_amount = command['amount'] * rate
+                    
+                    # Save to history
+                    self.bot.db.add_conversion(
+                        user_id,
+                        command['from_currency'],
+                        command['to_currency'],
+                        command['amount'],
+                        result_amount,
+                        rate
+                    )
+                    
+                    # Send result
+                    await processing_msg.edit_text(
+                        f"🎤 **Voice Command Executed**\n\n"
+                        f"🗣 Recognized: _{recognized_text}_\n\n"
+                        f"💱 **{command['amount']:,.2f} {command['from_currency']}** = "
+                        f"**{result_amount:,.2f} {command['to_currency']}**\n\n"
+                        f"📉 Rate: {rate:,.6f}",
+                        parse_mode='Markdown'
+                    )
+                    
+                    self.bot.metrics.log_conversion(user_id)
+                    logger.info(f"Voice conversion executed: {command['amount']} {command['from_currency']} -> {command['to_currency']}")
+                    
+                except Exception as e:
+                    logger.error(f"Error executing voice conversion: {e}")
+                    await processing_msg.edit_text(
+                        f"🎤 Recognized: *{recognized_text}*\n\n"
+                        f"❌ Error: {str(e)}",
+                        parse_mode='Markdown'
+                    )
+            else:
+                # Just show recognized text
+                await processing_msg.edit_text(
+                    f"🎤 **Recognized Text:**\n\n"
+                    f"_{recognized_text}_\n\n"
+                    f"ℹ️ I couldn't parse this as a conversion command.\n\n"
+                    f"Try: _'100 USD to EUR'_ or _'convert 50 bitcoin to dollars'_",
+                    parse_mode='Markdown'
+                )
+        
+        except Exception as e:
+            logger.error(f"Error handling voice message: {e}")
+            await update.message.reply_text(
+                f"❌ Error processing voice message: {str(e)}",
+                parse_mode='Markdown'
+            )
+    
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle all text messages."""
         user_id = update.effective_user.id
@@ -64,6 +185,12 @@ class MessageHandlers:
             await self.bot.portfolio_handler.show_portfolio_menu(update, context)
         elif text == get_text(user.lang, 'export'):
             await self.bot.export_handler.show_export_menu(update, context)
+        elif text == get_text(user.lang, 'news'):
+            await self.bot.news_handler.show_news_menu(update, context)
+        elif text == get_text(user.lang, 'reports_btn'):
+            await self.bot.report_handler.show_report_menu(update, context)
+        elif text == get_text(user.lang, 'dashboard_btn'):
+            await self.bot.dashboard_handler.show_dashboard_menu(update, context)
         elif text == get_text(user.lang, 'notifications'):
             await self.show_alerts(update, context)
         elif text == get_text(user.lang, 'favorites'):
@@ -196,6 +323,35 @@ class MessageHandlers:
             stats_text += "\n\n_Real-time prices from major exchanges_"
         else:
             stats_text += "_Unable to fetch crypto prices at the moment_\n"
+        
+        # Add model accuracy comparison
+        stats_text += "\n\n🎯 **Forecast Model Accuracy:**\n"
+        
+        # Get accuracy for BTC (most commonly predicted)
+        accuracy_stats = self.bot.prediction_generator.get_accuracy_comparison('BTC', days=30)
+        
+        if accuracy_stats:
+            arima = accuracy_stats.get('arima', {})
+            linreg = accuracy_stats.get('linreg', {})
+            
+            if arima.get('count', 0) > 0:
+                stats_text += f"\n📊 **ARIMA Model** (BTC)\n"
+                stats_text += f"• Predictions: {arima['count']}\n"
+                stats_text += f"• Avg Error: ${arima['avg_mae']:.2f}\n"
+                stats_text += f"• Accuracy: {100 - arima['avg_mape']:.1f}%\n"
+            
+            if linreg.get('count', 0) > 0:
+                stats_text += f"\n📊 **Linear Regression** (BTC)\n"
+                stats_text += f"• Predictions: {linreg['count']}\n"
+                stats_text += f"• Avg Error: ${linreg['avg_mae']:.2f}\n"
+                stats_text += f"• Accuracy: {100 - linreg['avg_mape']:.1f}%\n"
+            
+            if arima.get('count', 0) > 0 and linreg.get('count', 0) > 0:
+                # Show which is better
+                better = 'ARIMA' if arima['avg_mape'] < linreg['avg_mape'] else 'Linear Regression'
+                stats_text += f"\n🏆 **Best Model:** {better}\n"
+        else:
+            stats_text += "_No forecast history yet. Generate predictions to see accuracy stats!_\n"
         
         await update.message.reply_text(stats_text, parse_mode='Markdown')
     

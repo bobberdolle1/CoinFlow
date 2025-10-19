@@ -102,7 +102,7 @@ class PortfolioItem(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     def __repr__(self):
-        return f"<PortfolioItem(user_id={self.user_id}, {self.quantity} {self.asset_symbol})>"
+        return f"<PortfolioItem(user_id={self.user_id}, asset={self.asset_symbol}, qty={self.quantity})>"
     
     def to_dict(self):
         return {
@@ -117,3 +117,69 @@ class PortfolioItem(Base):
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
+
+
+class NewsSubscription(Base):
+    """News subscription model for crypto news alerts."""
+    
+    __tablename__ = 'news_subscriptions'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    asset_symbol = Column(String(10), nullable=False)  # BTC, ETH, etc.
+    categories = Column(JSON, default=[])  # ['hack', 'listing', 'update', 'regulation'] or [] for all
+    frequency = Column(String(20), default='realtime')  # 'realtime', 'hourly', 'daily'
+    enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_notified = Column(DateTime, nullable=True)
+    
+    # Relationship
+    user = relationship('User', backref='news_subscriptions')
+    
+    def __repr__(self):
+        return f"<NewsSubscription(user_id={self.user_id}, asset={self.asset_symbol}, freq={self.frequency})>"
+
+
+class ReportSubscription(Base):
+    """Report subscription model for automated reports."""
+    
+    __tablename__ = 'report_subscriptions'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    report_type = Column(String(20), default='weekly')  # 'weekly', 'monthly'
+    frequency = Column(String(20), default='weekly')  # 'weekly', 'monthly'
+    delivery_day = Column(Integer, default=1)  # 1-7 for weekly, 1-31 for monthly
+    enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_sent = Column(DateTime, nullable=True)
+    
+    # Relationship
+    user = relationship('User', backref='report_subscriptions')
+    
+    def __repr__(self):
+        return f"<ReportSubscription(user_id={self.user_id}, type={self.report_type}, freq={self.frequency})>"
+
+
+class PredictionHistory(Base):
+    """Prediction history model for tracking forecast accuracy."""
+    
+    __tablename__ = 'prediction_history'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    asset_symbol = Column(String(10), nullable=False)  # BTC, ETH, etc.
+    model_type = Column(String(20), nullable=False)  # 'arima', 'linreg'
+    predicted_price = Column(Float, nullable=False)
+    actual_price = Column(Float, nullable=True)  # Filled later when actual price is known
+    prediction_date = Column(DateTime, default=datetime.utcnow)
+    target_date = Column(DateTime, nullable=False)  # Date for which prediction was made
+    mae = Column(Float, nullable=True)  # Mean Absolute Error
+    mape = Column(Float, nullable=True)  # Mean Absolute Percentage Error
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    user = relationship('User', backref='predictions')
+    
+    def __repr__(self):
+        return f"<PredictionHistory(user_id={self.user_id}, asset={self.asset_symbol}, model={self.model_type})>"

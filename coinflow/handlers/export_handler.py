@@ -26,6 +26,8 @@ class ExportHandler:
             [InlineKeyboardButton(get_text(user.lang, 'export_alerts'), callback_data='export_alerts')],
             [InlineKeyboardButton(get_text(user.lang, 'export_history'), callback_data='export_history')],
             [InlineKeyboardButton(get_text(user.lang, 'export_all'), callback_data='export_all')],
+            [InlineKeyboardButton('📊 Google Sheets', callback_data='export_sheets_menu')],
+            [InlineKeyboardButton('📝 Notion', callback_data='export_notion_menu')],
             [InlineKeyboardButton(get_text(user.lang, 'back'), callback_data='back_main')]
         ]
         
@@ -202,3 +204,94 @@ class ExportHandler:
                 get_text(user.lang, 'export_error', error=str(e)),
                 parse_mode='Markdown'
             )
+    
+    async def show_sheets_menu(self, query, user):
+        """Show Google Sheets export menu."""
+        await query.answer()
+        
+        if not self.bot.sheets_service.is_available():
+            await query.edit_message_text(
+                "❌ **Google Sheets Not Available**\n\n"
+                "Google API libraries are not installed.\n\n"
+                "Install with: `pip install google-auth google-auth-oauthlib google-api-python-client`",
+                parse_mode='Markdown'
+            )
+            return
+        
+        keyboard = [
+            [InlineKeyboardButton('💼 Portfolio to Sheets', callback_data='export_sheets_portfolio')],
+            [InlineKeyboardButton('📋 History to Sheets', callback_data='export_sheets_history')],
+            [InlineKeyboardButton('🔑 Authorize Google', callback_data='export_sheets_auth')],
+            [InlineKeyboardButton(get_text(user.lang, 'back'), callback_data='export_menu')]
+        ]
+        
+        await query.edit_message_text(
+            "📊 **Google Sheets Export**\n\n"
+            "Export your data directly to Google Sheets.\n\n"
+            "⚠️ Note: Authorization requires OAuth setup.",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    async def handle_sheets_auth(self, query, user):
+        """Show Google Sheets authorization instructions."""
+        await query.answer()
+        await query.edit_message_text(
+            "🔑 **Google Sheets Authorization**\n\n"
+            "To export to Google Sheets, you need to:\n\n"
+            "1. Set up OAuth2 credentials in Google Cloud Console\n"
+            "2. Enable Google Sheets API\n"
+            "3. Complete OAuth flow\n\n"
+            "_OAuth integration requires additional setup._\n\n"
+            "For now, use CSV export and import to Sheets manually.",
+            parse_mode='Markdown',
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(get_text(user.lang, 'back'), callback_data='export_sheets_menu')]
+            ])
+        )
+    
+    async def show_notion_menu(self, query, user):
+        """Show Notion export menu."""
+        await query.answer()
+        
+        if not self.bot.notion_service.is_available():
+            await query.edit_message_text(
+                "❌ **Notion Not Available**\n\n"
+                "Notion client library is not installed.\n\n"
+                "Install with: `pip install notion-client`",
+                parse_mode='Markdown'
+            )
+            return
+        
+        keyboard = [
+            [InlineKeyboardButton('💼 Portfolio to Notion', callback_data='export_notion_portfolio')],
+            [InlineKeyboardButton('📋 History to Notion', callback_data='export_notion_history')],
+            [InlineKeyboardButton('🔑 Setup Instructions', callback_data='export_notion_setup')],
+            [InlineKeyboardButton(get_text(user.lang, 'back'), callback_data='export_menu')]
+        ]
+        
+        await query.edit_message_text(
+            "📝 **Notion Export**\n\n"
+            "Export your data to Notion databases.\n\n"
+            "⚠️ Note: Requires Notion API token and page ID.",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    async def handle_notion_setup(self, query, user):
+        """Show Notion setup instructions."""
+        await query.answer()
+        await query.edit_message_text(
+            "🔑 **Notion Setup Instructions**\n\n"
+            "1. Go to https://www.notion.so/my-integrations\n"
+            "2. Click 'New integration'\n"
+            "3. Copy your 'Internal Integration Token'\n"
+            "4. Share a Notion page with your integration\n"
+            "5. Copy the page ID from the URL\n\n"
+            "_Token storage requires secure implementation._\n\n"
+            "For now, use CSV export and import to Notion manually.",
+            parse_mode='Markdown',
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(get_text(user.lang, 'back'), callback_data='export_notion_menu')]
+            ])
+        )

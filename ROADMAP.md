@@ -85,27 +85,118 @@ This document outlines the development roadmap for CoinFlow Bot, including compl
 
 ---
 
-## 📅 Planned Features
+## 🚧 Detailed Roadmap (v2.2-v2.5)
 
-### v2.2.0 - Data Intelligence (Q1-Q2 2025)
+### Phase 3.1: News & Analytics (v2.2) - November 2025
 
-#### Data Export & Backup
-- 📤 **Export functionality**
-  - CSV export (alerts, portfolio, forecasts, history)
-  - ZIP archive generation
-  - Automated backups
-  - Google Sheets integration
+#### Crypto News Notifications 📰
+- 🔔 **Real-time news alerts**
+  - RSS feed integration (CoinDesk, Cointelegraph, CryptoSlate)
+  - News filtering by tracked assets
+  - Subscription management per asset
+  - Customizable notification frequency
+  - News categories (updates, hacks, listings, regulations)
+  - APScheduler integration for periodic checks
+
+#### Weekly Analytics Reports 📊
+- 📈 **Automated digest generation**
+  - Weekly/monthly performance summaries
+  - Visual reports with charts
+  - Best/worst performers analysis
+  - Market trend overview
+  - Portfolio performance tracking
+  - Subscription-based delivery
+  - Custom report scheduling
+
+#### Forecast Model Comparison 🎯
+- 📉 **Prediction accuracy tracking**
+  - MAE/MSE metrics for ARIMA vs LinReg
+  - Historical prediction accuracy
+  - Model performance by asset
+  - Real-time vs predicted comparison
+  - Automatic model selection
+  - Accuracy statistics in user stats
+
+#### Technical Implementation
+- `services/news_service.py` - RSS parsing, filtering, notifications
+- `services/report_service.py` - Digest generation, visualization
+- `services/forecast_service.py` - Metric tracking, comparison
+- `handlers/news_handler.py` - Subscription UI
+- `handlers/report_handler.py` - Report viewing, scheduling
+- Database models: `NewsSubscription`, `Report`, `ForecastAccuracy`
+
+### Phase 3.2: Integration & Export (v2.3) - Q1 2026
+
+#### Google Sheets & Notion Integration 📤
+- 🔗 **External service connectivity**
+  - Google Sheets OAuth integration
   - Notion API integration
+  - Automatic data synchronization
+  - Custom export templates
+  - Scheduled exports (daily/weekly/monthly)
+  - Real-time portfolio sync
+  - Alert and history export
 
-#### Enhanced Analytics
-- 📊 **Advanced portfolio analytics**
+#### Advanced Export Features
+- 📊 **Enhanced data delivery**
+  - Custom CSV/Excel templates
+  - Multi-format support (JSON, XML)
+  - Encrypted exports
+  - Cloud storage integration (Drive, Dropbox)
+  - Export history and versioning
+
+#### Technical Implementation
+- `services/sheets_service.py` - Google Sheets API
+- `services/notion_service.py` - Notion API
+- `services/cloud_service.py` - Cloud storage integrations
+- OAuth flow implementation
+- Secure credential storage
+- Database model: `ExportConfiguration`
+
+### Phase 3.3: Voice & Web Interface (v2.4) - Q2 2026
+
+#### Voice Input Support 🎤
+- 🗣️ **Speech recognition**
+  - Voice message handler
+  - OpenAI Whisper / Yandex SpeechKit integration
+  - Natural language parsing
+  - Conversion request recognition
+  - Multi-language support (EN/RU)
+  - Optional enable/disable in settings
+  - Voice feedback responses
+
+#### Telegram Mini App (Web Dashboard) 🌐
+- 💻 **Web interface**
+  - Telegram Web App API integration
+  - FastAPI/Flask backend
+  - Portfolio management interface
+  - Advanced alert configuration
+  - Chart customization
+  - Data analysis tools
+  - Export management
+  - Settings and preferences
+
+#### Technical Implementation
+- `services/speech_service.py` - Voice recognition
+- `webapp/` - Separate web application
+  - `webapp/api/` - REST API endpoints
+  - `webapp/frontend/` - Vue.js/React frontend
+  - `webapp/auth/` - Telegram authentication
+- Voice message handler in bot
+- WebApp button integration
+
+### Phase 4: Advanced Features (v2.5) - Q3-Q4 2026
+
+#### Advanced Portfolio Analytics 📊
+- 📈 **Enhanced portfolio insights**
   - Profit/Loss tracking
   - Asset allocation optimization suggestions
   - Risk analysis
   - Historical performance comparison
   - Rebalancing recommendations
 
-**Target:** March 2025
+#### AI Enhancements 🤖
+- 📊 **Improved AI features**
 
 ### v2.3.0 - Visual Enhancements (Q2 2025)
 
@@ -219,14 +310,14 @@ This document outlines the development roadmap for CoinFlow Bot, including compl
 
 ## 🎯 Development Priorities
 
-### High Priority (Must-Have)
+### High Priority (Must-Have) - v2.0-v2.1
 1. ✅ Core functionality (conversion, charts, forecasts)
 2. ✅ Multi-source data aggregation
-3. ✅ Stock market integration
-4. ✅ CS2 market integration
-5. 🚧 Portfolio management system
-6. 📅 Data export functionality
-7. 📅 Dark/Light theme
+3. ✅ Stock market integration (Global + Russian)
+4. ✅ CS2 market integration (30+ items)
+5. ✅ Portfolio management system
+6. ✅ Data export functionality (CSV + ZIP)
+7. ✅ Dark/Light theme with settings
 
 ### Medium Priority (Should-Have)
 1. 📅 NFT/Token support
@@ -335,6 +426,7 @@ We welcome contributions! Here's how you can help:
 
 ## 📝 Version History
 
+- **v2.1.0** (October 2025) - Portfolio Management, Data Export, Dark/Light Themes
 - **v2.0.0** (January 2025) - Ultimate Edition with Stocks & CS2
 - **v1.5.0** (December 2024) - SQLAlchemy migration
 - **v1.0.0** (November 2024) - Initial production release
@@ -344,9 +436,9 @@ We welcome contributions! Here's how you can help:
 
 ## 🔄 Roadmap Updates
 
-This roadmap is reviewed and updated monthly. Last updated: **January 2025**
+This roadmap is reviewed and updated monthly. Last updated: **October 2025**
 
-**Next review:** February 2025
+**Next review:** November 2025
 
 ---
 

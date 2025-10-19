@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, func
 from sqlalchemy.orm import Session, sessionmaker, scoped_session
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Tuple
-from .models import Base, User, Alert, ConversionHistory, Favorite, PortfolioItem
+from .models import Base, User, Alert, ConversionHistory, Favorite, PortfolioItem, NewsSubscription, ReportSubscription, PredictionHistory
 
 
 class DatabaseRepository:
@@ -359,5 +359,243 @@ class DatabaseRepository:
                 'by_type': type_counts,
                 'last_updated': max([item.updated_at for item in items]).isoformat() if items else None
             }
+        finally:
+            session.close()
+    
+    # --- News subscription operations ---
+    
+    def add_news_subscription(self, user_id: int, asset_symbol: str, categories: List[str] = None, 
+                             frequency: str = 'realtime') -> NewsSubscription:
+        """Add a news subscription for user."""
+        session = self.get_session()
+        try:
+            subscription = NewsSubscription(
+                user_id=user_id,
+                asset_symbol=asset_symbol,
+                categories=categories or [],
+                frequency=frequency
+            )
+            session.add(subscription)
+            session.commit()
+            session.refresh(subscription)
+            return subscription
+        finally:
+            session.close()
+    
+    def get_news_subscriptions(self, user_id: int, enabled_only: bool = True) -> List[NewsSubscription]:
+        """Get all news subscriptions for user."""
+        session = self.get_session()
+        try:
+            query = session.query(NewsSubscription).filter(NewsSubscription.user_id == user_id)
+            if enabled_only:
+                query = query.filter(NewsSubscription.enabled == True)
+            return query.all()
+        finally:
+            session.close()
+    
+    def get_news_subscription(self, subscription_id: int) -> NewsSubscription:
+        """Get a specific news subscription."""
+        session = self.get_session()
+        try:
+            return session.query(NewsSubscription).filter(NewsSubscription.id == subscription_id).first()
+        finally:
+            session.close()
+    
+    def update_news_subscription(self, subscription_id: int, **kwargs) -> bool:
+        """Update news subscription."""
+        session = self.get_session()
+        try:
+            updated = session.query(NewsSubscription).filter(
+                NewsSubscription.id == subscription_id
+            ).update(kwargs)
+            session.commit()
+            return updated > 0
+        finally:
+            session.close()
+    
+    def delete_news_subscription(self, subscription_id: int) -> bool:
+        """Delete a news subscription."""
+        session = self.get_session()
+        try:
+            deleted = session.query(NewsSubscription).filter(
+                NewsSubscription.id == subscription_id
+            ).delete()
+            session.commit()
+            return deleted > 0
+        finally:
+            session.close()
+    
+    def get_all_active_subscriptions(self) -> List[NewsSubscription]:
+        """Get all active news subscriptions for notification checking."""
+        session = self.get_session()
+        try:
+            return session.query(NewsSubscription).filter(NewsSubscription.enabled == True).all()
+        finally:
+            session.close()
+    
+    # --- Report subscription operations ---
+    
+    def add_report_subscription(self, user_id: int, report_type: str = 'weekly', 
+                               frequency: str = 'weekly', delivery_day: int = 1) -> ReportSubscription:
+        """Add a report subscription for user."""
+        session = self.get_session()
+        try:
+            subscription = ReportSubscription(
+                user_id=user_id,
+                report_type=report_type,
+                frequency=frequency,
+                delivery_day=delivery_day
+            )
+            session.add(subscription)
+            session.commit()
+            session.refresh(subscription)
+            return subscription
+        finally:
+            session.close()
+    
+    def get_report_subscriptions(self, user_id: int, enabled_only: bool = True) -> List[ReportSubscription]:
+        """Get all report subscriptions for user."""
+        session = self.get_session()
+        try:
+            query = session.query(ReportSubscription).filter(ReportSubscription.user_id == user_id)
+            if enabled_only:
+                query = query.filter(ReportSubscription.enabled == True)
+            return query.all()
+        finally:
+            session.close()
+    
+    def update_report_subscription(self, subscription_id: int, **kwargs) -> bool:
+        """Update report subscription."""
+        session = self.get_session()
+        try:
+            updated = session.query(ReportSubscription).filter(
+                ReportSubscription.id == subscription_id
+            ).update(kwargs)
+            session.commit()
+            return updated > 0
+        finally:
+            session.close()
+    
+    def delete_report_subscription(self, subscription_id: int) -> bool:
+        """Delete a report subscription."""
+        session = self.get_session()
+        try:
+            deleted = session.query(ReportSubscription).filter(
+                ReportSubscription.id == subscription_id
+            ).delete()
+            session.commit()
+            return deleted > 0
+        finally:
+            session.close()
+    
+    def get_all_active_report_subscriptions(self) -> List[ReportSubscription]:
+        """Get all active report subscriptions for scheduled delivery."""
+        session = self.get_session()
+        try:
+            return session.query(ReportSubscription).filter(ReportSubscription.enabled == True).all()
+        finally:
+            session.close()
+    
+    # --- Prediction history operations ---
+    
+    def add_prediction(self, user_id: int, asset_symbol: str, model_type: str, 
+                      predicted_price: float, target_date: datetime) -> PredictionHistory:
+        """Add a prediction to history."""
+        session = self.get_session()
+        try:
+            prediction = PredictionHistory(
+                user_id=user_id,
+                asset_symbol=asset_symbol,
+                model_type=model_type,
+                predicted_price=predicted_price,
+                target_date=target_date
+            )
+            session.add(prediction)
+            session.commit()
+            session.refresh(prediction)
+            return prediction
+        finally:
+            session.close()
+    
+    def get_predictions(self, user_id: int, asset_symbol: str = None) -> List[PredictionHistory]:
+        """Get prediction history for user."""
+        session = self.get_session()
+        try:
+            query = session.query(PredictionHistory).filter(PredictionHistory.user_id == user_id)
+            if asset_symbol:
+                query = query.filter(PredictionHistory.asset_symbol == asset_symbol)
+            return query.order_by(PredictionHistory.prediction_date.desc()).all()
+        finally:
+            session.close()
+    
+    def get_predictions_to_validate(self) -> List[PredictionHistory]:
+        """Get predictions that need validation (target date passed, no actual price yet)."""
+        session = self.get_session()
+        try:
+            now = datetime.now()
+            return session.query(PredictionHistory).filter(
+                PredictionHistory.target_date <= now,
+                PredictionHistory.actual_price == None
+            ).all()
+        finally:
+            session.close()
+    
+    def update_prediction_accuracy(self, prediction_id: int, actual_price: float) -> bool:
+        """Update prediction with actual price and calculate errors."""
+        session = self.get_session()
+        try:
+            prediction = session.query(PredictionHistory).filter(
+                PredictionHistory.id == prediction_id
+            ).first()
+            
+            if not prediction:
+                return False
+            
+            # Calculate MAE and MAPE
+            mae = abs(prediction.predicted_price - actual_price)
+            mape = (mae / actual_price * 100) if actual_price != 0 else 0
+            
+            prediction.actual_price = actual_price
+            prediction.mae = mae
+            prediction.mape = mape
+            
+            session.commit()
+            return True
+        finally:
+            session.close()
+    
+    def get_model_accuracy_stats(self, asset_symbol: str, days: int = 30) -> Dict:
+        """Get accuracy statistics for prediction models."""
+        session = self.get_session()
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days)
+            
+            predictions = session.query(PredictionHistory).filter(
+                PredictionHistory.asset_symbol == asset_symbol,
+                PredictionHistory.prediction_date >= cutoff_date,
+                PredictionHistory.actual_price != None
+            ).all()
+            
+            if not predictions:
+                return None
+            
+            # Group by model
+            arima_predictions = [p for p in predictions if p.model_type == 'arima']
+            linreg_predictions = [p for p in predictions if p.model_type == 'linreg']
+            
+            stats = {
+                'arima': {
+                    'count': len(arima_predictions),
+                    'avg_mae': sum(p.mae for p in arima_predictions) / len(arima_predictions) if arima_predictions else 0,
+                    'avg_mape': sum(p.mape for p in arima_predictions) / len(arima_predictions) if arima_predictions else 0
+                },
+                'linreg': {
+                    'count': len(linreg_predictions),
+                    'avg_mae': sum(p.mae for p in linreg_predictions) / len(linreg_predictions) if linreg_predictions else 0,
+                    'avg_mape': sum(p.mape for p in linreg_predictions) / len(linreg_predictions) if linreg_predictions else 0
+                }
+            }
+            
+            return stats
         finally:
             session.close()

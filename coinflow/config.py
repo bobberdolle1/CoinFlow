@@ -19,7 +19,10 @@ class Config:
     CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "60"))
     
     # Alert check interval (minutes)
-    ALERT_CHECK_INTERVAL = int(os.getenv("ALERT_CHECK_INTERVAL", "5"))
+    ALERT_CHECK_INTERVAL = int(os.getenv('ALERT_CHECK_INTERVAL', '5'))
+    
+    # Web App URL
+    WEBAPP_URL = os.getenv('WEBAPP_URL', 'http://localhost:8000')
     
     # Chart settings
     CHART_DPI = int(os.getenv("CHART_DPI", "150"))

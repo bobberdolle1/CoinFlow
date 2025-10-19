@@ -18,8 +18,9 @@ logger = setup_logger('prediction')
 class PredictionGenerator:
     """Генератор прогнозов курсов."""
     
-    def __init__(self, dpi: int = 150):
+    def __init__(self, dpi: int = 150, db = None):
         self.dpi = dpi
+        self.db = db
     
     def generate_prediction(self, pair: str, model_type: str = 'arima', 
                           days: int = 90, forecast_days: int = 7) -> Tuple[Optional[bytes], Dict]:
@@ -113,7 +114,9 @@ class PredictionGenerator:
                 'confidence': confidence,
                 'data_source': 'Yahoo Finance',
                 'days_analyzed': len(df),
-                'forecast_date': (datetime.now() + timedelta(days=forecast_days)).strftime('%Y-%m-%d')
+                'forecast_date': (datetime.now() + timedelta(days=forecast_days)).strftime('%Y-%m-%d'),
+                'model_type': model_type,
+                'forecast_days': forecast_days
             }
             
             # Создание графика
@@ -156,3 +159,39 @@ class PredictionGenerator:
         except Exception as e:
             logger.error(f"Prediction generation error for {pair}: {e}", exc_info=True)
             return None, {'error': 'exception', 'pair': pair, 'message': str(e)}
+    
+    def save_prediction(self, user_id: int, pair: str, predicted_price: float, 
+                       model_type: str, forecast_days: int = 7):
+        """Save prediction to database for accuracy tracking."""
+        if not self.db:
+            return
+        
+        try:
+            # Extract asset symbol from pair (e.g., BTC-USD -> BTC)
+            asset_symbol = pair.split('-')[0]
+            
+            # Calculate target date
+            target_date = datetime.now() + timedelta(days=forecast_days)
+            
+            # Save to database
+            self.db.add_prediction(
+                user_id=user_id,
+                asset_symbol=asset_symbol,
+                model_type=model_type,
+                predicted_price=predicted_price,
+                target_date=target_date
+            )
+            logger.info(f"Saved prediction for {asset_symbol} by user {user_id}")
+        except Exception as e:
+            logger.error(f"Error saving prediction: {e}")
+    
+    def get_accuracy_comparison(self, asset_symbol: str, days: int = 30) -> Dict:
+        """Get accuracy comparison between models."""
+        if not self.db:
+            return None
+        
+        try:
+            return self.db.get_model_accuracy_stats(asset_symbol, days)
+        except Exception as e:
+            logger.error(f"Error getting accuracy stats: {e}")
+            return None

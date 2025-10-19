@@ -1,6 +1,6 @@
-# 🪙 CoinFlow Bot v2.1 - Ultimate Edition
+# 🪙 CoinFlow Bot v2.5 - Ultimate Edition
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-2.1-orange.svg)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-2.5-orange.svg)
 
 **Advanced Telegram bot for currency conversion, cryptocurrency analysis, portfolio management, and data export with professional architecture**
 
@@ -124,6 +124,116 @@
 - 📈 **Stock Market Integration**: Global stocks (Yahoo Finance), Russian stocks (MOEX), CBR official rates
 - 🎮 **Gaming Market**: CS2 item prices from Steam Community Market and Skinport
 - 🌍 **Universal Coverage**: Crypto + Stocks + Gaming = All-in-one analytics tool
+
+### 🆕 What's New in v2.5
+
+**Web Dashboard 🌐**
+- 🖥️ **FastAPI Application**: Modern async web framework
+- 📱 **Telegram Web App**: Native integration within Telegram
+- 🔐 **Secure Authentication**: HMAC verification via Telegram
+- 📊 **Live Crypto Prices**: 10+ cryptocurrencies with auto-refresh
+- 💼 **Portfolio View**: Interactive asset management
+- 📜 **History & Analytics**: Conversion tracking and statistics
+- 🎨 **Responsive Design**: Mobile-first adaptive UI
+- 🌓 **Theme Integration**: Follows Telegram theme
+
+**Dashboard Features:**
+- Real-time cryptocurrency prices (auto-refresh 30s)
+- Portfolio visualization with all assets
+- Last 100 conversion history
+- Statistics dashboard (conversions, alerts, favorites)
+- Active alerts display
+- Favorite currencies quick access
+
+**Technical Stack:**
+- FastAPI for async REST API
+- Jinja2 templating
+- Telegram Web App SDK
+- Chart.js for visualizations
+- CORS support
+- Health monitoring
+
+### 🆕 What's New in v2.4
+
+**Voice Input Integration 🎤**
+- 🗣️ **Speech Recognition**: Automatic voice message transcription
+- 🌐 **Google Speech API**: Free speech-to-text service
+- 🧠 **Smart Parsing**: Intelligent conversion command detection
+- 🌍 **Multi-language**: English and Russian support
+- 💬 **Natural Language**: "100 USD to EUR" or "convert 50 bitcoin"
+- ⚡ **Auto-Conversion**: Direct execution from voice
+- 📊 **Real-time Feedback**: Shows recognized text and results
+
+**Supported Voice Commands:**
+- "100 USD to EUR"
+- "Convert 50 dollars to euros"
+- "How much is 1000 rubles in dollars"
+- "100 bitcoin" (defaults to USD)
+- Natural language variations
+
+**Technical Enhancements:**
+- 📦 **Optional Dependencies**: SpeechRecognition, pydub
+- 🔊 **Audio Processing**: OGG to WAV conversion
+- 🎯 **Command Parsing**: Regex-based pattern matching
+- ⚙️ **Async Processing**: Non-blocking voice recognition
+- ✅ **Graceful Degradation**: Works without optional libs
+
+### 🆕 What's New in v2.3
+
+**Google Sheets Integration 📊**
+- 🔐 **OAuth2 Authorization**: Secure Google account access
+- 📤 **Direct Export**: Export portfolio and history to Sheets
+- 🆕 **Auto-Creation**: Creates formatted spreadsheets automatically
+- 🔗 **Live Links**: Shareable links to exported data
+- 🔄 **Update Support**: Update existing spreadsheets
+
+**Notion Integration 📝**
+- 🗄️ **Database Creation**: Automatic Notion database setup
+- 💼 **Portfolio Export**: Rich properties and custom fields
+- 📋 **History Export**: Full conversion history tracking
+- 🎨 **Custom Schemas**: Configurable database properties
+- 🔌 **Official API**: Uses Notion's official client
+
+**Technical Enhancements:**
+- 📦 **Optional Dependencies**: Google/Notion APIs as extras
+- 🔧 **Poetry Extras**: Selective installation support
+- ✅ **Graceful Degradation**: Works without optional libs
+- 🎛️ **Enhanced Export Menu**: New Sheets/Notion options
+- 📚 **Setup Instructions**: OAuth and API token guides
+
+### 🆕 What's New in v2.2
+
+**Crypto News Notifications 📰**
+- 📡 **RSS Feed Integration**: Automatic aggregation from 5 major sources (CoinDesk, Cointelegraph, CryptoSlate, Decrypt, Bitcoinist)
+- 🎯 **Smart Asset Detection**: Automatically identifies mentioned cryptocurrencies
+- 🏷️ **Category Filtering**: Hacks, Listings, Updates, Regulations, General
+- 📋 **Subscription Management**: Subscribe to specific assets and categories
+- ⏰ **Real-time Notifications**: Automatic delivery every 15 minutes
+- 🌐 **Multi-language**: Full English and Russian support
+
+**Analytics Reports 📊**
+- 📅 **Weekly Market Digest**: Automated performance summaries
+- 💼 **Portfolio Reports**: Detailed analysis with distribution charts
+- 📈 **Performance Tracking**: Best/worst performers visualization
+- 🔔 **Report Subscriptions**: Schedule weekly or monthly reports
+- 📊 **Visual Analytics**: Generated charts with metrics
+
+**Forecast Model Comparison 🎯**
+- 🎲 **Prediction Tracking**: Automatic saving of all forecasts
+- 📐 **Accuracy Metrics**: MAE and MAPE calculation
+- ⚖️ **Model Comparison**: ARIMA vs Linear Regression stats
+- ✅ **Auto-Validation**: Every 6 hours against actual prices
+- 📊 **Stats Display**: Accuracy shown in Statistics menu
+- 📈 **30-Day Analysis**: Rolling accuracy calculation
+
+**Technical Enhancements:**
+- 🗄️ **New Database Models**: NewsSubscription, ReportSubscription, PredictionHistory
+- 🔧 **New Services**: NewsService (273 lines), ReportService (230 lines)
+- 🎯 **New Handlers**: NewsHandler (300 lines), ReportHandler (200 lines)
+- 🤖 **Enhanced Services**: PredictionGenerator with tracking & accuracy
+- 📝 **Extended Localization**: 50+ new strings in EN/RU
+- ⏱️ **APScheduler Jobs**: News checking (15 min), prediction validation (6 hours)
+- 📦 **New Dependencies**: feedparser for RSS parsing
 
 ### 🆕 What's New in v2.1
 

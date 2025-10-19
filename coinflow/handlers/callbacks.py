@@ -138,6 +138,59 @@ class CallbackHandlers:
             await self.bot.export_handler.handle_export_history(query, user)
         elif data == 'export_all':
             await self.bot.export_handler.handle_export_all(query, user)
+        elif data == 'export_sheets_menu':
+            await self.bot.export_handler.show_sheets_menu(query, user)
+        elif data == 'export_sheets_auth':
+            await self.bot.export_handler.handle_sheets_auth(query, user)
+        elif data == 'export_notion_menu':
+            await self.bot.export_handler.show_notion_menu(query, user)
+        elif data == 'export_notion_setup':
+            await self.bot.export_handler.handle_notion_setup(query, user)
+        
+        # News callbacks
+        elif data == 'news_menu':
+            await self.bot.news_handler.show_news_menu(query, context)
+        elif data == 'news_latest':
+            await self.bot.news_handler.show_latest_news(query, user)
+        elif data == 'news_subscriptions':
+            await self.bot.news_handler.show_subscriptions(query, user)
+        elif data == 'news_subscribe':
+            await self.bot.news_handler.show_subscribe_assets(query, user)
+        elif data.startswith('news_select_'):
+            asset = data.replace('news_select_', '')
+            await self.bot.news_handler.handle_asset_selected(query, user, asset)
+        elif data.startswith('news_cat_'):
+            parts = data.replace('news_cat_', '').split('_')
+            asset = parts[0]
+            category = parts[1] if len(parts) > 1 else 'all'
+            await self.bot.news_handler.handle_category_selected(query, user, asset, category)
+        elif data.startswith('news_toggle_'):
+            sub_id = int(data.replace('news_toggle_', ''))
+            await self.bot.news_handler.handle_toggle_subscription(query, user, sub_id)
+        elif data.startswith('news_delete_'):
+            sub_id = int(data.replace('news_delete_', ''))
+            await self.bot.news_handler.handle_delete_subscription(query, user, sub_id)
+        
+        # Report callbacks
+        elif data == 'reports_menu':
+            await self.bot.report_handler.show_report_menu(query, context)
+        elif data == 'report_generate':
+            await self.bot.report_handler.generate_report(query, user)
+        elif data == 'report_weekly':
+            await self.bot.report_handler.generate_weekly_report(query, user)
+        elif data == 'report_portfolio':
+            await self.bot.report_handler.generate_portfolio_report(query, user)
+        elif data == 'report_subscribe':
+            await self.bot.report_handler.show_subscribe_options(query, user)
+        elif data.startswith('report_sub_'):
+            report_type = data.replace('report_sub_', '')
+            await self.bot.report_handler.subscribe_to_report(query, user, report_type)
+        
+        # Dashboard callbacks
+        elif data == 'dashboard_menu':
+            await self.bot.dashboard_handler.show_dashboard_menu(query, context)
+        elif data == 'dashboard_features':
+            await self.bot.dashboard_handler.show_dashboard_features(query, user)
         
         # Back to main
         elif data == 'back_main':
@@ -409,6 +462,18 @@ class CallbackHandlers:
                 parse_mode='Markdown'
             )
             self.bot.metrics.log_prediction(user.telegram_id)
+            
+            # Save prediction for accuracy tracking
+            try:
+                self.bot.prediction_generator.save_prediction(
+                    user_id=user.telegram_id,
+                    pair=f"{pair}-USD",
+                    predicted_price=predicted,
+                    model_type=stats.get('model_type', model),
+                    forecast_days=stats.get('forecast_days', 7)
+                )
+            except Exception as e:
+                logger.error(f"Failed to save prediction: {e}")
         else:
             await query.edit_message_text(
                 f"❌ **Forecast Generation Failed**\n\n"

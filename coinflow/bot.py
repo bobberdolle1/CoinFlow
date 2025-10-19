@@ -6,8 +6,8 @@ from telegram import InlineQueryResultArticle, InputTextMessageContent
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
 from .database import DatabaseRepository
-from .services import CurrencyConverter, Calculator, ChartGenerator, PredictionGenerator, AlertManager, StockService, CS2MarketService, PortfolioService, ExportService
-from .handlers import CommandHandlers, MessageHandlers, CallbackHandlers, StocksHandler, CS2Handler, PortfolioHandler, ExportHandler
+from .services import CurrencyConverter, Calculator, ChartGenerator, PredictionGenerator, AlertManager, StockService, CS2MarketService, PortfolioService, ExportService, NewsService, ReportService, GoogleSheetsService, NotionService, VoiceService
+from .handlers import CommandHandlers, MessageHandlers, CallbackHandlers, StocksHandler, CS2Handler, PortfolioHandler, ExportHandler, NewsHandler, ReportHandler, DashboardHandler
 from .config import config
 from .utils import setup_logger, Metrics
 from .localization import get_text
@@ -32,12 +32,17 @@ class CoinFlowBot:
         
         self.calculator = Calculator(self.converter)
         self.chart_generator = ChartGenerator(dpi=config.CHART_DPI)
-        self.prediction_generator = PredictionGenerator(dpi=config.CHART_DPI)
+        self.prediction_generator = PredictionGenerator(dpi=config.CHART_DPI, db=self.db)
         self.alert_manager = AlertManager(self.db)
         self.stock_service = StockService(cache_ttl=config.CACHE_TTL_SECONDS)
         self.cs2_service = CS2MarketService(cache_ttl=config.CACHE_TTL_SECONDS)
         self.portfolio_service = PortfolioService(self.db, self.converter, self.stock_service, self.cs2_service)
         self.export_service = ExportService(self.db)
+        self.news_service = NewsService(cache_ttl=config.CACHE_TTL_SECONDS)
+        self.report_service = ReportService(self.db, self.converter, self.portfolio_service, self.chart_generator)
+        self.sheets_service = GoogleSheetsService(self.db)
+        self.notion_service = NotionService(self.db)
+        self.voice_service = VoiceService()
         
         # Metrics
         self.metrics = Metrics()
@@ -53,6 +58,9 @@ class CoinFlowBot:
         self.cs2_handler = CS2Handler(self)
         self.portfolio_handler = PortfolioHandler(self)
         self.export_handler = ExportHandler(self)
+        self.news_handler = NewsHandler(self)
+        self.report_handler = ReportHandler(self)
+        self.dashboard_handler = DashboardHandler(self)
         
         logger.info("All services initialized")
         
@@ -77,9 +85,11 @@ class CoinFlowBot:
             [get_text(lang, 'compare_rates'), get_text(lang, 'calculator')],
             [get_text(lang, 'stocks'), get_text(lang, 'cs2_skins')],
             [get_text(lang, 'portfolio'), get_text(lang, 'export')],
+            [get_text(lang, 'news'), get_text(lang, 'reports')],
             [get_text(lang, 'notifications'), get_text(lang, 'favorites')],
-            [get_text(lang, 'history'), get_text(lang, 'stats_btn')],
-            [get_text(lang, 'settings'), get_text(lang, 'about_btn')]
+            [get_text(lang, 'dashboard'), get_text(lang, 'history')],
+            [get_text(lang, 'stats_btn'), get_text(lang, 'settings')],
+            [get_text(lang, 'about_btn')]
         ], resize_keyboard=True)
     
     def get_currency_selection_keyboard(self, lang: str, selection_type: str = 'popular') -> InlineKeyboardMarkup:
@@ -215,6 +225,93 @@ def check_all_alerts(context, bot: CoinFlowBot):
         logger.error(f"Alert check error: {e}")
 
 
+async def validate_predictions(context, bot):
+    """Validate predictions by comparing with actual prices."""
+    try:
+        logger.info("Validating predictions...")
+        
+        # Get predictions that need validation
+        predictions = bot.db.get_predictions_to_validate()
+        
+        if not predictions:
+            return
+        
+        for pred in predictions:
+            try:
+                # Get current price
+                rate = bot.converter.get_rate(pred.asset_symbol, 'USD')
+                
+                if rate and rate > 0:
+                    # Update prediction with actual price
+                    bot.db.update_prediction_accuracy(pred.id, rate)
+                    logger.info(f"Updated prediction {pred.id} for {pred.asset_symbol}: predicted=${pred.predicted_price:.2f}, actual=${rate:.2f}")
+            except Exception as e:
+                logger.error(f"Error validating prediction {pred.id}: {e}")
+        
+        logger.info(f"Validated {len(predictions)} predictions")
+    except Exception as e:
+        logger.error(f"Error in prediction validation: {e}")
+
+
+async def check_news_notifications(context, bot):
+    """Check for new news and send notifications to subscribed users."""
+    try:
+        logger.info("Checking news notifications...")
+        
+        # Get all active subscriptions
+        subscriptions = bot.db.get_all_active_subscriptions()
+        
+        if not subscriptions:
+            return
+        
+        # Group by user
+        user_subs = {}
+        for sub in subscriptions:
+            if sub.user_id not in user_subs:
+                user_subs[sub.user_id] = {}
+            user_subs[sub.user_id][sub.asset_symbol] = sub.categories
+        
+        # Fetch latest news
+        all_news = await bot.news_service.fetch_news(max_age_hours=1)
+        
+        # Send notifications to users
+        for user_id, subs_dict in user_subs.items():
+            user = bot.db.get_user(user_id)
+            if not user:
+                continue
+            
+            # Get relevant news for this user
+            relevant_news = []
+            for item in all_news:
+                for asset, categories in subs_dict.items():
+                    if asset in item.assets:
+                        if not categories or item.category in categories:
+                            relevant_news.append(item)
+                            break
+            
+            # Send news items
+            sent_count = 0
+            for item in relevant_news[:3]:  # Max 3 items per check
+                try:
+                    message = bot.news_service.format_news_message(item, user.lang)
+                    await context.bot.send_message(
+                        chat_id=user_id,
+                        text=message,
+                        parse_mode='Markdown',
+                        disable_web_page_preview=True
+                    )
+                    sent_count += 1
+                except Exception as e:
+                    logger.error(f"Error sending news to user {user_id}: {e}")
+                    continue
+            
+            if sent_count > 0:
+                logger.info(f"Sent {sent_count} news items to user {user_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in news notification check: {e}")
+
+
 def setup_bot() -> Application:
     """Setup and configure the bot application."""
     # Create bot instance
@@ -234,18 +331,33 @@ def setup_bot() -> Application:
     # Add message handler
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot.message_handlers.handle_message))
     
+    # Add voice message handler
+    app.add_handler(MessageHandler(filters.VOICE, bot.message_handlers.handle_voice))
+    
     # Add callback query handler
     app.add_handler(CallbackQueryHandler(bot.callback_handlers.handle_callback))
     
     # Add inline query handler
     app.add_handler(InlineQueryHandler(bot.inline_query))
     
-    # Setup background scheduler for alerts
+    # Setup background scheduler for alerts and news
     scheduler = BackgroundScheduler()
     scheduler.add_job(
         check_all_alerts,
         'interval',
         minutes=config.ALERT_CHECK_INTERVAL,
+        kwargs={'context': app, 'bot': bot}
+    )
+    scheduler.add_job(
+        check_news_notifications,
+        'interval',
+        minutes=15,  # Check news every 15 minutes
+        kwargs={'context': app, 'bot': bot}
+    )
+    scheduler.add_job(
+        validate_predictions,
+        'interval',
+        hours=6,  # Validate predictions every 6 hours
         kwargs={'context': app, 'bot': bot}
     )
     scheduler.start()

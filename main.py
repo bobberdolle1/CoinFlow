@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-CoinFlow Bot v2.0 - Main entry point
-Enhanced multi-functional Telegram bot for currency conversion and crypto analysis
+CoinFlow Bot v2.5 - Main entry point
+Enhanced multi-functional Telegram bot with web dashboard and full feature set
 """
 
 import sys
@@ -16,14 +16,14 @@ def main():
     """Main function to run the bot."""
     try:
         logger.info("="*50)
-        logger.info("Starting CoinFlow Bot v2.0")
+        logger.info("Starting CoinFlow Bot v2.5")
         logger.info("="*50)
         
         # Setup bot
         app = setup_bot()
         
         # Run the bot
-        logger.info("🤖 CoinFlow Bot v2.0 is running...")
+        logger.info("🤖 CoinFlow Bot v2.5 is running...")
         logger.info("Press Ctrl+C to stop")
         
         app.run_polling(allowed_updates=['message', 'callback_query', 'inline_query'])
