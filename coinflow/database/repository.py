@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, func
 from sqlalchemy.orm import Session, sessionmaker, scoped_session
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Tuple
-from .models import Base, User, Alert, ConversionHistory, Favorite
+from .models import Base, User, Alert, ConversionHistory, Favorite, PortfolioItem
 
 
 class DatabaseRepository:
@@ -260,6 +260,104 @@ class DatabaseRepository:
                 'total_conversions': total_conversions,
                 'total_alerts': total_alerts,
                 'favorites_count': favorites_count
+            }
+        finally:
+            session.close()
+    
+    # --- Portfolio operations ---
+    
+    def add_portfolio_item(self, user_id: int, asset_type: str, asset_symbol: str, 
+                          asset_name: str, quantity: float, purchase_price: float = None,
+                          purchase_date: datetime = None, notes: str = None) -> PortfolioItem:
+        """Add a new item to user's portfolio."""
+        session = self.get_session()
+        try:
+            item = PortfolioItem(
+                user_id=user_id,
+                asset_type=asset_type,
+                asset_symbol=asset_symbol.upper(),
+                asset_name=asset_name,
+                quantity=quantity,
+                purchase_price=purchase_price,
+                purchase_date=purchase_date,
+                notes=notes
+            )
+            session.add(item)
+            session.commit()
+            session.refresh(item)
+            return item
+        finally:
+            session.close()
+    
+    def get_portfolio_items(self, user_id: int, asset_type: str = None) -> List[PortfolioItem]:
+        """Get all portfolio items for a user, optionally filtered by asset type."""
+        session = self.get_session()
+        try:
+            query = session.query(PortfolioItem).filter(PortfolioItem.user_id == user_id)
+            if asset_type:
+                query = query.filter(PortfolioItem.asset_type == asset_type)
+            return query.order_by(PortfolioItem.created_at.desc()).all()
+        finally:
+            session.close()
+    
+    def get_portfolio_item(self, item_id: int, user_id: int) -> Optional[PortfolioItem]:
+        """Get a specific portfolio item."""
+        session = self.get_session()
+        try:
+            return session.query(PortfolioItem).filter(
+                PortfolioItem.id == item_id,
+                PortfolioItem.user_id == user_id
+            ).first()
+        finally:
+            session.close()
+    
+    def update_portfolio_item(self, item_id: int, user_id: int, **kwargs) -> Optional[PortfolioItem]:
+        """Update a portfolio item."""
+        session = self.get_session()
+        try:
+            item = session.query(PortfolioItem).filter(
+                PortfolioItem.id == item_id,
+                PortfolioItem.user_id == user_id
+            ).first()
+            if item:
+                for key, value in kwargs.items():
+                    if hasattr(item, key):
+                        setattr(item, key, value)
+                item.updated_at = datetime.utcnow()
+                session.commit()
+                session.refresh(item)
+            return item
+        finally:
+            session.close()
+    
+    def delete_portfolio_item(self, item_id: int, user_id: int) -> bool:
+        """Delete a portfolio item."""
+        session = self.get_session()
+        try:
+            deleted = session.query(PortfolioItem).filter(
+                PortfolioItem.id == item_id,
+                PortfolioItem.user_id == user_id
+            ).delete()
+            session.commit()
+            return deleted > 0
+        finally:
+            session.close()
+    
+    def get_portfolio_summary(self, user_id: int) -> Dict:
+        """Get summary statistics for user's portfolio."""
+        session = self.get_session()
+        try:
+            items = session.query(PortfolioItem).filter(PortfolioItem.user_id == user_id).all()
+            
+            # Count by type
+            type_counts = {}
+            for item in items:
+                type_counts[item.asset_type] = type_counts.get(item.asset_type, 0) + 1
+            
+            return {
+                'total_items': len(items),
+                'by_type': type_counts,
+                'last_updated': max([item.updated_at for item in items]).isoformat() if items else None
             }
         finally:
             session.close()

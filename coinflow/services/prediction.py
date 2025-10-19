@@ -44,20 +44,33 @@ class PredictionGenerator:
             start_date = end_date - timedelta(days=days)
             df = ticker.history(start=start_date, end=end_date)
             
-            if df.empty or len(df) < 30:
-                logger.warning(f"Insufficient data for {pair}")
-                return None, {}
+            # Validate data availability
+            if df.empty:
+                logger.warning(f"No data available for {pair}")
+                return None, {'error': 'no_data', 'pair': pair}
+            
+            if len(df) < 30:
+                logger.warning(f"Insufficient data for {pair}: only {len(df)} days")
+                return None, {'error': 'insufficient_data', 'pair': pair, 'days_available': len(df)}
             
             prices = df['Close'].values
             current_price = prices[-1]
             
+            # Validate price data
+            if current_price <= 0 or np.isnan(current_price):
+                logger.error(f"Invalid current price for {pair}: {current_price}")
+                return None, {'error': 'invalid_price', 'pair': pair}
+            
             # Прогнозирование
             forecast = None
+            confidence = 'medium'
+            
             if model_type == 'arima':
                 try:
                     model = ARIMA(prices, order=(5, 1, 0))
                     model_fit = model.fit()
                     forecast = model_fit.forecast(steps=forecast_days)
+                    confidence = 'high'
                     logger.info(f"ARIMA forecast completed for {pair}")
                 except Exception as e:
                     logger.warning(f"ARIMA failed for {pair}, falling back to linear: {e}")
@@ -70,18 +83,37 @@ class PredictionGenerator:
                 model.fit(X, y)
                 future_X = np.arange(len(prices), len(prices) + forecast_days).reshape(-1, 1)
                 forecast = model.predict(future_X)
+                confidence = 'medium'
                 logger.info(f"Linear regression forecast completed for {pair}")
             
+            # Validate forecast
+            if forecast is None or len(forecast) == 0:
+                logger.error(f"Forecast generation failed for {pair}")
+                return None, {'error': 'forecast_failed', 'pair': pair}
+            
             forecast_price = forecast[-1]
+            
+            # Validate forecast price
+            if forecast_price <= 0 or np.isnan(forecast_price):
+                logger.error(f"Invalid forecast price for {pair}: {forecast_price}")
+                return None, {'error': 'invalid_forecast', 'pair': pair}
+            
+            # Calculate change percentage
+            price_change = forecast_price - current_price
+            price_change_pct = (price_change / current_price) * 100
             trend = 'up' if forecast_price > current_price else 'down'
             
             # Статистика
             stats = {
                 'model': model_type.upper(),
                 'current': round(current_price, 2),
-                'forecast': round(forecast_price, 2),
+                'predicted': round(forecast_price, 2),
+                'change': round(price_change_pct, 2),
                 'trend': '📈 Upward' if trend == 'up' else '📉 Downward',
-                'days': days
+                'confidence': confidence,
+                'data_source': 'Yahoo Finance',
+                'days_analyzed': len(df),
+                'forecast_date': (datetime.now() + timedelta(days=forecast_days)).strftime('%Y-%m-%d')
             }
             
             # Создание графика
@@ -122,5 +154,5 @@ class PredictionGenerator:
             return buf.getvalue(), stats
             
         except Exception as e:
-            logger.error(f"Prediction generation error for {pair}: {e}")
-            return None, {}
+            logger.error(f"Prediction generation error for {pair}: {e}", exc_info=True)
+            return None, {'error': 'exception', 'pair': pair, 'message': str(e)}

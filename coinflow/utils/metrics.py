@@ -14,6 +14,8 @@ class Metrics:
         self.alerts_triggered = 0
         self.comparisons_made = 0
         self.calculations_made = 0
+        self.stock_queries = 0
+        self.cs2_queries = 0
         self.active_users: Set[int] = set()
         self.start_time = datetime.now()
     
@@ -47,6 +49,16 @@ class Metrics:
         self.calculations_made += 1
         self.active_users.add(user_id)
     
+    def log_stock_query(self, user_id: int):
+        """Log a stock query."""
+        self.stock_queries += 1
+        self.active_users.add(user_id)
+    
+    def log_cs2_query(self, user_id: int):
+        """Log a CS2 item query."""
+        self.cs2_queries += 1
+        self.active_users.add(user_id)
+    
     def get_stats(self) -> Dict:
         """Get current metrics."""
         uptime = datetime.now() - self.start_time
@@ -57,6 +69,8 @@ class Metrics:
             'alerts': self.alerts_triggered,
             'comparisons': self.comparisons_made,
             'calculations': self.calculations_made,
+            'stock_queries': self.stock_queries,
+            'cs2_queries': self.cs2_queries,
             'active_users': len(self.active_users),
             'uptime_hours': round(uptime.total_seconds() / 3600, 2)
         }
@@ -71,6 +85,8 @@ class Metrics:
             f"🔮 Predictions: {stats['predictions']}\n"
             f"⚖️ Comparisons: {stats['comparisons']}\n"
             f"🧮 Calculations: {stats['calculations']}\n"
+            f"📊 Stock queries: {stats['stock_queries']}\n"
+            f"🎮 CS2 queries: {stats['cs2_queries']}\n"
             f"🔔 Alerts triggered: {stats['alerts']}\n"
             f"👥 Active users: {stats['active_users']}\n"
             f"⏱️ Uptime: {stats['uptime_hours']} hours"

@@ -6,8 +6,8 @@ from telegram import InlineQueryResultArticle, InputTextMessageContent
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
 from .database import DatabaseRepository
-from .services import CurrencyConverter, Calculator, ChartGenerator, PredictionGenerator, AlertManager
-from .handlers import CommandHandlers, MessageHandlers, CallbackHandlers
+from .services import CurrencyConverter, Calculator, ChartGenerator, PredictionGenerator, AlertManager, StockService, CS2MarketService, PortfolioService, ExportService
+from .handlers import CommandHandlers, MessageHandlers, CallbackHandlers, StocksHandler, CS2Handler, PortfolioHandler, ExportHandler
 from .config import config
 from .utils import setup_logger, Metrics
 from .localization import get_text
@@ -34,14 +34,25 @@ class CoinFlowBot:
         self.chart_generator = ChartGenerator(dpi=config.CHART_DPI)
         self.prediction_generator = PredictionGenerator(dpi=config.CHART_DPI)
         self.alert_manager = AlertManager(self.db)
+        self.stock_service = StockService(cache_ttl=config.CACHE_TTL_SECONDS)
+        self.cs2_service = CS2MarketService(cache_ttl=config.CACHE_TTL_SECONDS)
+        self.portfolio_service = PortfolioService(self.db, self.converter, self.stock_service, self.cs2_service)
+        self.export_service = ExportService(self.db)
         
         # Metrics
         self.metrics = Metrics()
+        
+        # Temporary storage for multi-step operations
+        self.temp_storage = {}
         
         # Handlers
         self.command_handlers = CommandHandlers(self)
         self.message_handlers = MessageHandlers(self)
         self.callback_handlers = CallbackHandlers(self)
+        self.stocks_handler = StocksHandler(self)
+        self.cs2_handler = CS2Handler(self)
+        self.portfolio_handler = PortfolioHandler(self)
+        self.export_handler = ExportHandler(self)
         
         logger.info("All services initialized")
         
@@ -64,6 +75,8 @@ class CoinFlowBot:
             [get_text(lang, 'quick_convert')],
             [get_text(lang, 'rate_charts'), get_text(lang, 'rate_prediction')],
             [get_text(lang, 'compare_rates'), get_text(lang, 'calculator')],
+            [get_text(lang, 'stocks'), get_text(lang, 'cs2_skins')],
+            [get_text(lang, 'portfolio'), get_text(lang, 'export')],
             [get_text(lang, 'notifications'), get_text(lang, 'favorites')],
             [get_text(lang, 'history'), get_text(lang, 'stats_btn')],
             [get_text(lang, 'settings'), get_text(lang, 'about_btn')]

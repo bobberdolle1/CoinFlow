@@ -15,6 +15,8 @@
 **CoinFlow** is your ultimate Telegram-based financial assistant that combines:
 - 💱 Advanced multi-source currency converter (60+ currencies)
 - 📊 Real-time cryptocurrency analysis from 5+ exchanges
+- 📈 Global & Russian stock market analytics (35+ stocks)
+- 🎮 CS2 item price comparison across marketplaces
 - 🔮 AI-powered price forecasting (ARIMA & Linear Regression)
 - 📈 Interactive charts and historical data visualization
 - 🧮 Built-in calculator with currency conversion support
@@ -115,6 +117,45 @@
 - 🎯 **Streamlined Flow**: No amount input for charts/forecasts (only for conversions)
 - 📱 **Industry Standard**: Follows UX patterns from CoinGecko, TradingView, Binance
 
+**Market Expansion:**
+- 📈 **Stock Market Integration**: Global stocks (Yahoo Finance), Russian stocks (MOEX), CBR official rates
+- 🎮 **Gaming Market**: CS2 item prices from Steam Community Market and Skinport
+- 🌍 **Universal Coverage**: Crypto + Stocks + Gaming = All-in-one analytics tool
+
+### 📈 Stock Market Features (NEW!)
+
+#### 🌍 Global Stocks (20+ tickers)
+- **Popular stocks**: AAPL, MSFT, GOOGL, AMZN, NVDA, TSLA, META, JPM, and more
+- **Real-time data**: Current price, 24h change ($ and %), market cap, volume
+- **Charts**: 30-day price history with interactive statistics
+- **API**: Yahoo Finance (yfinance library)
+
+#### 🇷🇺 Russian Stocks (15+ tickers)
+- **Major stocks**: Сбербанк (SBER), Газпром (GAZP), Лукойл (LKOH), Норникель (GMKN), Яндекс (YNDX)
+- **MOEX integration**: Real-time prices from Moscow Exchange
+- **Ruble pricing**: All prices in RUB with daily change tracking
+
+#### 💱 CBR Exchange Rates (8 currencies)
+- **Official rates**: USD, EUR, CNY, GBP, JPY, TRY, KZT, BYN
+- **Daily updates**: Central Bank of Russia official exchange rates
+- **Unified menu**: Russian stocks and CBR rates in one convenient interface
+
+### 🎮 CS2 Market Features (NEW!)
+
+#### Item Categories (30+ items)
+- **🔪 Knives**: Karambit, M9 Bayonet, Butterfly Knife, Talon Knife
+- **🧤 Gloves**: Sport Gloves, Specialist Gloves, Driver Gloves
+- **🔫 Rifles**: AK-47, M4A4, M4A1-S skins (Redline, Vulcan, Asiimov, etc.)
+- **🎯 Snipers**: AWP skins (Dragon Lore, Asiimov, Hyper Beast, etc.)
+- **🔫 Pistols**: Desert Eagle, Glock, USP-S premium skins
+- **⚡ SMGs**: P90, MAC-10, Five-SeveN skins
+
+#### Price Comparison
+- **Multi-marketplace**: Steam Community Market + Skinport
+- **Smart analysis**: Average, min, max prices with spread calculation
+- **Best deal finder**: Automatic recommendation for best buying price
+- **Real-time updates**: 5-minute cache for fresh pricing data
+
 ### 🛠️ Tech Stack
 
 **Core:**
@@ -146,6 +187,8 @@
 - 📊 **Rate Charts**: Historical price charts (7/30/90/365 days) for 1 unit
 - 🔮 **Rate Forecast**: AI price predictions for 1 unit (7-day ahead)
 - ⚖️ **Compare Rates**: Cross-exchange price comparison for 1 unit
+- 📈 **Stocks**: Global stocks, Russian stocks (MOEX), CBR exchange rates
+- 🎮 **CS2 Skins**: CS2 item prices across Steam & Skinport marketplaces
 - 🧮 **Calculator**: Math expressions with currency conversion
 - 🔔 **Notifications**: Manage price alerts
 - ⭐ **Favorites**: Quick access to saved currencies
