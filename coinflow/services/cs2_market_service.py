@@ -78,6 +78,34 @@ class CS2MarketService:
         self.cache = Cache(ttl_seconds=cache_ttl)
         logger.info("CS2MarketService initialized")
     
+    def search_items(self, query: str, limit: int = 10) -> List[str]:
+        """
+        Search CS2 items by keyword.
+        
+        Args:
+            query: Search query (e.g., 'karambit', 'ak47', 'doppler')
+            limit: Maximum number of results to return
+        
+        Returns:
+            List of item IDs matching the query
+        """
+        query_lower = query.lower().strip()
+        results = []
+        
+        for item_id, item_info in self.POPULAR_ITEMS.items():
+            item_name_lower = item_info['name'].lower()
+            
+            # Check if query matches item name
+            if query_lower in item_name_lower or query_lower in item_id:
+                results.append(item_id)
+            
+            # Stop if we have enough results
+            if len(results) >= limit:
+                break
+        
+        logger.info(f"Search '{query}' found {len(results)} items")
+        return results
+    
     def get_item_price_steam(self, item_name: str) -> Optional[float]:
         """
         Get item price from Steam Community Market.

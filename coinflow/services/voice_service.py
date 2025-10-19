@@ -2,6 +2,7 @@
 
 import os
 import io
+import shutil
 from typing import Optional, Dict
 from ..utils.logger import setup_logger
 
@@ -22,17 +23,26 @@ except ImportError:
     PYDUB_AVAILABLE = False
     logger.warning("pydub not available. Install with: pip install pydub")
 
+# Check if ffmpeg is available
+FFMPEG_AVAILABLE = shutil.which('ffmpeg') is not None
+if not FFMPEG_AVAILABLE:
+    logger.warning("ffmpeg not found in PATH. Voice recognition requires ffmpeg for audio conversion.")
+
 
 class VoiceService:
     """Service for voice message recognition."""
     
     def __init__(self):
         """Initialize voice service."""
-        self.available = SR_AVAILABLE and PYDUB_AVAILABLE
+        self.available = SR_AVAILABLE and PYDUB_AVAILABLE and FFMPEG_AVAILABLE
+        self.ffmpeg_available = FFMPEG_AVAILABLE
         
-        if self.available:
-            self.recognizer = sr.Recognizer()
-            logger.info("Voice service initialized successfully")
+        if SR_AVAILABLE and PYDUB_AVAILABLE:
+            if FFMPEG_AVAILABLE:
+                self.recognizer = sr.Recognizer()
+                logger.info("Voice service initialized successfully")
+            else:
+                logger.warning("Voice service initialized but ffmpeg not available")
         else:
             logger.warning("Voice service initialized but libraries not available")
     
@@ -51,6 +61,11 @@ class VoiceService:
             WAV audio data or None
         """
         if not PYDUB_AVAILABLE:
+            logger.error("pydub not available")
+            return None
+        
+        if not FFMPEG_AVAILABLE:
+            logger.error("ffmpeg not found in PATH")
             return None
         
         try:
@@ -63,6 +78,9 @@ class VoiceService:
             wav_buffer.seek(0)
             
             return wav_buffer.read()
+        except FileNotFoundError as e:
+            logger.error(f"ffmpeg executable not found: {e}")
+            return None
         except Exception as e:
             logger.error(f"Error converting OGG to WAV: {e}")
             return None
@@ -131,13 +149,28 @@ class VoiceService:
             language: User's language preference
         
         Returns:
-            Recognition result
+            Recognition result with error codes for localization
         """
-        if not self.available:
+        # Check dependencies
+        if not SR_AVAILABLE:
             return {
                 'success': False,
-                'error': 'not_available',
-                'message': 'Voice recognition is not available. Install required libraries.'
+                'error': 'speechrecognition_missing',
+                'message': 'SpeechRecognition library not installed'
+            }
+        
+        if not PYDUB_AVAILABLE:
+            return {
+                'success': False,
+                'error': 'pydub_missing',
+                'message': 'pydub library not installed'
+            }
+        
+        if not FFMPEG_AVAILABLE:
+            return {
+                'success': False,
+                'error': 'ffmpeg_missing',
+                'message': 'ffmpeg not found in system PATH'
             }
         
         try:

@@ -21,11 +21,14 @@ class MessageHandlers:
         
         # Check if voice service is available
         if not self.bot.voice_service.is_available():
+            # Determine specific error
+            if not self.bot.voice_service.ffmpeg_available:
+                error_key = 'voice_ffmpeg_missing'
+            else:
+                error_key = 'voice_not_available'
+            
             await update.message.reply_text(
-                "❌ **Voice Recognition Not Available**\n\n"
-                "Required libraries are not installed.\n\n"
-                "Install with: `pip install SpeechRecognition pydub`\n\n"
-                "Also install ffmpeg for audio processing.",
+                get_text(user.lang, error_key),
                 parse_mode='Markdown'
             )
             return
@@ -33,7 +36,7 @@ class MessageHandlers:
         try:
             # Show processing message
             processing_msg = await update.message.reply_text(
-                "🎤 Processing voice message..."
+                get_text(user.lang, 'voice_processing')
             )
             
             # Get voice file
@@ -50,9 +53,20 @@ class MessageHandlers:
             )
             
             if not result.get('success'):
-                error_msg = result.get('message', 'Unknown error')
+                # Map error codes to localized messages
+                error_code = result.get('error', 'unknown')
+                error_map = {
+                    'ffmpeg_missing': 'voice_ffmpeg_missing',
+                    'speechrecognition_missing': 'voice_speechrecognition_missing',
+                    'pydub_missing': 'voice_pydub_missing',
+                    'conversion_failed': 'voice_conversion_failed',
+                    'speech_not_understood': 'voice_not_understood',
+                    'api_error': 'voice_api_error',
+                }
+                
+                localization_key = error_map.get(error_code, 'voice_conversion_failed')
                 await processing_msg.edit_text(
-                    f"❌ **Recognition Failed**\n\n{error_msg}",
+                    get_text(user.lang, localization_key),
                     parse_mode='Markdown'
                 )
                 return
@@ -66,8 +80,11 @@ class MessageHandlers:
             if command:
                 # Execute conversion
                 await processing_msg.edit_text(
-                    f"🎤 Recognized: *{recognized_text}*\n\n"
-                    f"⏳ Converting {command['amount']} {command['from_currency']} to {command['to_currency']}...",
+                    get_text(user.lang, 'voice_recognized', text=recognized_text) + "\n\n" +
+                    get_text(user.lang, 'voice_converting', 
+                            amount=command['amount'], 
+                            from_curr=command['from_currency'], 
+                            to_curr=command['to_currency']),
                     parse_mode='Markdown'
                 )
                 
@@ -80,8 +97,10 @@ class MessageHandlers:
                     
                     if not rate:
                         await processing_msg.edit_text(
-                            f"🎤 Recognized: *{recognized_text}*\n\n"
-                            f"❌ Unable to get rate for {command['from_currency']}/{command['to_currency']}",
+                            get_text(user.lang, 'voice_recognized', text=recognized_text) + "\n\n" +
+                            get_text(user.lang, 'voice_rate_unavailable', 
+                                    from_curr=command['from_currency'], 
+                                    to_curr=command['to_currency']),
                             parse_mode='Markdown'
                         )
                         return
@@ -100,8 +119,8 @@ class MessageHandlers:
                     
                     # Send result
                     await processing_msg.edit_text(
-                        f"🎤 **Voice Command Executed**\n\n"
-                        f"🗣 Recognized: _{recognized_text}_\n\n"
+                        get_text(user.lang, 'voice_command_executed') + "\n\n"
+                        f"🗣 {get_text(user.lang, 'voice_recognized', text=recognized_text).replace('*', '')}\n\n"
                         f"💱 **{command['amount']:,.2f} {command['from_currency']}** = "
                         f"**{result_amount:,.2f} {command['to_currency']}**\n\n"
                         f"📉 Rate: {rate:,.6f}",
@@ -121,10 +140,10 @@ class MessageHandlers:
             else:
                 # Just show recognized text
                 await processing_msg.edit_text(
-                    f"🎤 **Recognized Text:**\n\n"
+                    get_text(user.lang, 'voice_recognized_title') + "\n\n"
                     f"_{recognized_text}_\n\n"
-                    f"ℹ️ I couldn't parse this as a conversion command.\n\n"
-                    f"Try: _'100 USD to EUR'_ or _'convert 50 bitcoin to dollars'_",
+                    f"{get_text(user.lang, 'voice_not_parsed')}\n\n"
+                    f"{get_text(user.lang, 'voice_try_format')}",
                     parse_mode='Markdown'
                 )
         
@@ -143,6 +162,13 @@ class MessageHandlers:
         user_state = self.bot.temp_storage.get(user_id, {})
         if user_state.get('state') == 'awaiting_announcement_content':
             await self.bot.admin_handler.handle_announcement_content(update, context)
+            return
+        
+        # Check if user is searching CS2 items
+        if user_state.get('state') == 'awaiting_cs2_search':
+            await self.bot.cs2_handler.handle_search_query(update, context, update.message.text)
+            # Clear state
+            self.bot.temp_storage.pop(user_id, None)
             return
         
         text = update.message.text
@@ -197,7 +223,7 @@ class MessageHandlers:
         elif text == get_text(user.lang, 'reports_btn'):
             await self.bot.report_handler.show_report_menu(update, context)
         elif text == get_text(user.lang, 'dashboard_btn'):
-            await self.bot.dashboard_handler.show_dashboard_menu(update, context)
+            await self.bot.dashboard_handler.show_dashboard(update, context)
         elif text == get_text(user.lang, 'ai_assistant'):
             await self.bot.ai_handler.show_ai_menu(update, context)
         elif text == get_text(user.lang, 'analytics'):

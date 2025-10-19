@@ -53,8 +53,50 @@ class CallbackHandlers:
         # Period selection for charts
         elif data.startswith('period_'):
             period = int(data.split('_')[1])
-            pair = context.user_data.get('chart_pair', 'BTC')
-            await self.generate_chart(query, user, pair, period)
+            chart_type = context.user_data.get('chart_type', 'crypto')
+            
+            if chart_type == 'crypto':
+                pair = context.user_data.get('chart_pair', 'BTC')
+                await self.generate_chart(query, user, pair, period)
+            elif chart_type == 'stock':
+                ticker = context.user_data.get('chart_ticker')
+                stock_type = context.user_data.get('stock_type', 'global')
+                await self.bot.stocks_handler.show_stock_chart(query, user, ticker, stock_type, period)
+            elif chart_type == 'cbr':
+                currency = context.user_data.get('chart_currency')
+                await self.bot.stocks_handler.show_cbr_chart(query, user, currency, period)
+        
+        # Chart type selection
+        elif data.startswith('chart_type_'):
+            chart_type = data.replace('chart_type_', '')
+            await self.handle_chart_type_selection(query, user, context, chart_type)
+        
+        # Chart stock market selection
+        elif data.startswith('chart_stocks_'):
+            market_type = data.replace('chart_stocks_', '')
+            await self.show_chart_stock_selection(query, user, context, market_type)
+        
+        # Chart CBR currency selection
+        elif data.startswith('chart_cbr_'):
+            currency = data.replace('chart_cbr_', '')
+            context.user_data['chart_currency'] = currency
+            context.user_data['chart_type'] = 'cbr'
+            await self.show_period_selection(query, user, context, currency)
+        
+        # Chart stock ticker selection
+        elif data.startswith('chart_stock_'):
+            ticker = data.replace('chart_stock_', '')
+            context.user_data['chart_ticker'] = ticker
+            await self.show_period_selection(query, user, context, ticker)
+        
+        # Back to chart type selection
+        elif data == 'back_chart_type':
+            await self.start_chart_selection_callback(query, user, context)
+        
+        # Conversion type selection
+        elif data.startswith('convert_type_'):
+            convert_type = data.replace('convert_type_', '')
+            await self.handle_conversion_type_selection(query, user, context, convert_type)
         
         # Settings callbacks
         elif data.startswith('settings_'):
@@ -67,6 +109,8 @@ class CallbackHandlers:
             await self.bot.stocks_handler.show_global_stocks(query, user)
         elif data == 'stocks_russian':
             await self.bot.stocks_handler.show_russian_stocks(query, user)
+        elif data == 'cbr_rates':
+            await self.bot.stocks_handler.show_cbr_rates(query, user)
         elif data.startswith('stock_global_'):
             ticker = data.replace('stock_global_', '')
             await self.bot.stocks_handler.show_global_stock_info(query, user, ticker)
@@ -78,7 +122,13 @@ class CallbackHandlers:
             await self.bot.stocks_handler.show_cbr_rate(query, user, currency)
         elif data.startswith('stock_chart_global_'):
             ticker = data.replace('stock_chart_global_', '')
-            await self.bot.stocks_handler.show_stock_chart(query, user, ticker)
+            await self.bot.stocks_handler.show_stock_chart(query, user, ticker, 'global')
+        elif data.startswith('stock_chart_russian_'):
+            ticker = data.replace('stock_chart_russian_', '')
+            await self.bot.stocks_handler.show_stock_chart(query, user, ticker, 'russian')
+        elif data.startswith('cbr_chart_'):
+            currency = data.replace('cbr_chart_', '')
+            await self.bot.stocks_handler.show_cbr_chart(query, user, currency)
         
         # CS2 callbacks
         elif data.startswith('cs2_'):
@@ -300,20 +350,138 @@ class CallbackHandlers:
             await self.compare_rates(query, user, currency)
     
     async def start_conversion(self, update, user, context):
-        """Start conversion flow."""
-        context.user_data['state'] = 'select_from'
+        """Start conversion flow - show currency type selection."""
+        context.user_data['state'] = 'select_conversion_type'
+        
+        keyboard = [
+            [InlineKeyboardButton(
+                get_text(user.lang, 'crypto_rates'),
+                callback_data='convert_type_crypto'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'fiat_currencies'),
+                callback_data='convert_type_fiat'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'cbr_rates'),
+                callback_data='convert_type_cbr'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'popular_pairs'),
+                callback_data='convert_type_popular'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'back'),
+                callback_data='back_main'
+            )]
+        ]
+        
         await update.message.reply_text(
-            get_text(user.lang, 'select_from_currency'),
-            reply_markup=self.bot.get_currency_selection_keyboard(user.lang, 'popular'),
+            get_text(user.lang, 'select_conversion_type'),
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    async def handle_conversion_type_selection(self, query, user, context, convert_type: str):
+        """Handle conversion type selection."""
+        context.user_data['conversion_type'] = convert_type
+        
+        if convert_type == 'crypto':
+            # Show crypto currency selection
+            context.user_data['state'] = 'select_from'
+            await query.edit_message_text(
+                get_text(user.lang, 'select_from_currency'),
+                reply_markup=self.bot.get_currency_selection_keyboard(user.lang, 'crypto'),
+                parse_mode='Markdown'
+            )
+        
+        elif convert_type == 'fiat':
+            # Show fiat currency selection
+            context.user_data['state'] = 'select_from'
+            await query.edit_message_text(
+                get_text(user.lang, 'select_from_currency'),
+                reply_markup=self.bot.get_currency_selection_keyboard(user.lang, 'fiat'),
+                parse_mode='Markdown'
+            )
+        
+        elif convert_type == 'cbr':
+            # Show CBR rates view (no conversion, just display)
+            await self.show_cbr_rates_list(query, user)
+        
+        elif convert_type == 'popular':
+            # Show popular pairs selection
+            context.user_data['state'] = 'select_from'
+            await query.edit_message_text(
+                get_text(user.lang, 'select_from_currency'),
+                reply_markup=self.bot.get_currency_selection_keyboard(user.lang, 'popular'),
+                parse_mode='Markdown'
+            )
+    
+    async def show_cbr_rates_list(self, query, user):
+        """Show list of CBR exchange rates."""
+        from ..services.stock_service import StockService
+        
+        message = f"💵 **{get_text(user.lang, 'cbr_rates')}**\n\n"
+        message += f"🇷🇺 {get_text(user.lang, 'cbr_official_rates')}\n\n"
+        
+        currencies = list(StockService.CBR_CURRENCIES.keys())
+        
+        # Fetch current rates
+        for currency in currencies:
+            rate_data = self.bot.stock_service.get_cbr_rate(currency)
+            if rate_data:
+                change_emoji = '📈' if rate_data['change_pct'] >= 0 else '📉'
+                sign = '+' if rate_data['change_pct'] >= 0 else ''
+                message += f"{change_emoji} **{currency}/RUB:** {rate_data['rate']:.4f} ₽ ({sign}{rate_data['change_pct']:.2f}%)\n"
+        
+        # Add buttons for detailed view
+        keyboard = []
+        row = []
+        for currency in currencies:
+            row.append(InlineKeyboardButton(currency, callback_data=f'cbr_{currency}'))
+            if len(row) == 4:
+                keyboard.append(row)
+                row = []
+        if row:
+            keyboard.append(row)
+        
+        keyboard.append([InlineKeyboardButton(
+            get_text(user.lang, 'back'),
+            callback_data='back_main'
+        )])
+        
+        await query.edit_message_text(
+            message,
+            reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode='Markdown'
         )
     
     async def start_chart_selection(self, update, user, context):
-        """Start chart selection flow."""
-        context.user_data['state'] = 'select_chart'
+        """Start chart selection flow - show asset type selection."""
+        context.user_data['state'] = 'select_chart_type'
+        
+        keyboard = [
+            [InlineKeyboardButton(
+                get_text(user.lang, 'crypto_rates'),
+                callback_data='chart_type_crypto'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'stocks'),
+                callback_data='chart_type_stocks'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'cbr_rates'),
+                callback_data='chart_type_cbr'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'back'),
+                callback_data='back_main'
+            )]
+        ]
+        
         await update.message.reply_text(
-            get_text(user.lang, 'select_currency_chart'),
-            reply_markup=self.bot.get_currency_selection_keyboard(user.lang, 'crypto'),
+            get_text(user.lang, 'select_chart_type'),
+            reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode='Markdown'
         )
     
@@ -423,6 +591,151 @@ class CallbackHandlers:
         ]
         await query.edit_message_text(
             f"📊 **Chart for 1 {currency}**\n\nSelect time period:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    async def handle_chart_type_selection(self, query, user, context, chart_type: str):
+        """Handle chart type selection (crypto, stocks, cbr)."""
+        context.user_data['chart_type'] = chart_type
+        
+        if chart_type == 'crypto':
+            # Show cryptocurrency selection
+            await query.edit_message_text(
+                get_text(user.lang, 'select_currency_chart'),
+                reply_markup=self.bot.get_currency_selection_keyboard(user.lang, 'crypto'),
+                parse_mode='Markdown'
+            )
+        
+        elif chart_type == 'stocks':
+            # Show stock market selection (global/russian)
+            keyboard = [
+                [InlineKeyboardButton(
+                    get_text(user.lang, 'stocks_global'),
+                    callback_data='chart_stocks_global'
+                )],
+                [InlineKeyboardButton(
+                    get_text(user.lang, 'stocks_russian'),
+                    callback_data='chart_stocks_russian'
+                )],
+                [InlineKeyboardButton(
+                    get_text(user.lang, 'back'),
+                    callback_data='back_chart_type'
+                )]
+            ]
+            await query.edit_message_text(
+                get_text(user.lang, 'select_stock_market'),
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode='Markdown'
+            )
+        
+        elif chart_type == 'cbr':
+            # Show CBR currencies selection
+            from ..services.stock_service import StockService
+            currencies = list(StockService.CBR_CURRENCIES.keys())
+            
+            keyboard = []
+            row = []
+            for currency in currencies:
+                row.append(InlineKeyboardButton(currency, callback_data=f'chart_cbr_{currency}'))
+                if len(row) == 4:
+                    keyboard.append(row)
+                    row = []
+            if row:
+                keyboard.append(row)
+            
+            keyboard.append([InlineKeyboardButton(
+                get_text(user.lang, 'back'),
+                callback_data='back_chart_type'
+            )])
+            
+            await query.edit_message_text(
+                get_text(user.lang, 'cbr_rates_select'),
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode='Markdown'
+            )
+    
+    async def start_chart_selection_callback(self, query, user, context):
+        """Start chart selection from callback."""
+        context.user_data['state'] = 'select_chart_type'
+        
+        keyboard = [
+            [InlineKeyboardButton(
+                get_text(user.lang, 'crypto_rates'),
+                callback_data='chart_type_crypto'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'stocks'),
+                callback_data='chart_type_stocks'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'cbr_rates'),
+                callback_data='chart_type_cbr'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'back'),
+                callback_data='back_main'
+            )]
+        ]
+        
+        await query.edit_message_text(
+            get_text(user.lang, 'select_chart_type'),
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    async def show_chart_stock_selection(self, query, user, context, market_type: str):
+        """Show stock selection for charts."""
+        context.user_data['stock_type'] = market_type
+        context.user_data['chart_type'] = 'stock'
+        
+        if market_type == 'global':
+            stocks = list(self.bot.stock_service.GLOBAL_STOCKS.keys())[:24]
+        else:
+            stocks = list(self.bot.stock_service.RUSSIAN_STOCKS.keys())[:18]
+        
+        keyboard = []
+        row = []
+        for ticker in stocks:
+            row.append(InlineKeyboardButton(ticker, callback_data=f'chart_stock_{ticker}'))
+            if len(row) == 3:
+                keyboard.append(row)
+                row = []
+        if row:
+            keyboard.append(row)
+        
+        keyboard.append([InlineKeyboardButton(
+            get_text(user.lang, 'back'),
+            callback_data='chart_type_stocks'
+        )])
+        
+        select_key = 'stocks_global_select' if market_type == 'global' else 'stocks_russian_select'
+        await query.edit_message_text(
+            get_text(user.lang, select_key),
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    async def show_period_selection(self, query, user, context, asset: str):
+        """Show period selection for chart."""
+        keyboard = [
+            [InlineKeyboardButton('7 days', callback_data='period_7'),
+             InlineKeyboardButton('30 days', callback_data='period_30')],
+            [InlineKeyboardButton('90 days', callback_data='period_90'),
+             InlineKeyboardButton('1 year', callback_data='period_365')],
+            [InlineKeyboardButton(get_text(user.lang, 'back'), callback_data='back_chart_type')]
+        ]
+        
+        chart_type = context.user_data.get('chart_type', 'crypto')
+        if chart_type == 'cbr':
+            title = f"💵 **CBR Rate: {asset}/RUB**"
+        elif chart_type == 'stock':
+            title = f"📊 **Stock: {asset}**"
+        else:
+            title = f"📊 **Chart for {asset}**"
+        
+        await query.edit_message_text(
+            f"{title}\n\nSelect time period:",
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode='Markdown'
         )

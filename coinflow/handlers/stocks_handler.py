@@ -33,6 +33,10 @@ class StocksHandler:
                 callback_data='stocks_russian'
             )],
             [InlineKeyboardButton(
+                get_text(user.lang, 'cbr_rates'), 
+                callback_data='cbr_rates'
+            )],
+            [InlineKeyboardButton(
                 get_text(user.lang, 'back'), 
                 callback_data='back_main'
             )]
@@ -74,11 +78,11 @@ class StocksHandler:
         )
     
     async def show_russian_stocks(self, query, user):
-        """Show list of Russian stocks and CBR rates."""
+        """Show list of Russian stocks (MOEX)."""
         keyboard = []
         
         # Add Russian stocks
-        stocks = list(self.stock_service.RUSSIAN_STOCKS.keys())[:16]
+        stocks = list(self.stock_service.RUSSIAN_STOCKS.keys())[:18]
         row = []
         for ticker in stocks:
             row.append(InlineKeyboardButton(ticker, callback_data=f'stock_russian_{ticker}'))
@@ -88,8 +92,17 @@ class StocksHandler:
         if row:
             keyboard.append(row)
         
-        # Add separator
-        keyboard.append([InlineKeyboardButton('━━━ ЦБ РФ Курсы ━━━', callback_data='noop')])
+        keyboard.append([InlineKeyboardButton(get_text(user.lang, 'back'), callback_data='stocks_menu')])
+        
+        await query.edit_message_text(
+            get_text(user.lang, 'stocks_russian_select'),
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    async def show_cbr_rates(self, query, user):
+        """Show CBR exchange rates."""
+        keyboard = []
         
         # Add CBR currencies
         cbr_currencies = list(self.stock_service.CBR_CURRENCIES.keys())
@@ -105,7 +118,7 @@ class StocksHandler:
         keyboard.append([InlineKeyboardButton(get_text(user.lang, 'back'), callback_data='stocks_menu')])
         
         await query.edit_message_text(
-            get_text(user.lang, 'stocks_russian_select'),
+            get_text(user.lang, 'cbr_rates_select'),
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode='Markdown'
         )
@@ -192,6 +205,10 @@ class StocksHandler:
         # Create keyboard
         keyboard = [
             [InlineKeyboardButton(
+                get_text(user.lang, 'show_chart'),
+                callback_data=f'stock_chart_russian_{ticker}'
+            )],
+            [InlineKeyboardButton(
                 get_text(user.lang, 'back'), 
                 callback_data='stocks_russian'
             )]
@@ -241,8 +258,12 @@ class StocksHandler:
         # Create keyboard
         keyboard = [
             [InlineKeyboardButton(
+                get_text(user.lang, 'show_chart'),
+                callback_data=f'cbr_chart_{currency}'
+            )],
+            [InlineKeyboardButton(
                 get_text(user.lang, 'back'), 
-                callback_data='stocks_russian'
+                callback_data='cbr_rates'
             )]
         ]
         
@@ -252,71 +273,55 @@ class StocksHandler:
             parse_mode='Markdown'
         )
     
-    async def show_stock_chart(self, query, user, ticker: str, days: int = 30):
+    async def show_stock_chart(self, query, user, ticker: str, chart_type: str = 'global', period: int = 30):
         """Generate and show stock chart."""
         await query.edit_message_text(
-            f"📊 {get_text(user.lang, 'chart_generating', pair=ticker)}",
+            f"📊 {get_text(user.lang, 'loading')}...",
             parse_mode='Markdown'
         )
         
-        # Get historical data
-        history = self.stock_service.get_global_stock_history(ticker, days)
-        
-        if not history:
-            await query.edit_message_text(
-                get_text(user.lang, 'chart_error', ticker=ticker),
-                parse_mode='Markdown'
-            )
-            return
-        
         try:
-            # Create chart
-            dates = [item[0] for item in history]
-            prices = [item[1] for item in history]
+            # Get user theme preference
+            theme = getattr(user, 'chart_theme', 'light')
             
-            plt.figure(figsize=(10, 6), dpi=100)
-            plt.plot(dates, prices, linewidth=2, color='#2962FF')
-            plt.fill_between(range(len(prices)), prices, alpha=0.3, color='#2962FF')
+            # Add .ME suffix for Russian stocks
+            if chart_type == 'russian':
+                ticker_full = f"{ticker}.ME"
+            else:
+                ticker_full = ticker
             
-            plt.title(f'{ticker} - {days} Days', fontsize=16, fontweight='bold')
-            plt.xlabel('Date', fontsize=12)
-            plt.ylabel('Price (USD)', fontsize=12)
-            plt.grid(True, alpha=0.3)
-            plt.xticks(rotation=45)
-            plt.tight_layout()
+            # Generate chart using ChartGenerator
+            chart_bytes, stats = self.bot.chart_generator.generate_stock_chart(ticker_full, period, theme)
             
-            # Save to buffer
-            buf = io.BytesIO()
-            plt.savefig(buf, format='png', bbox_inches='tight')
-            buf.seek(0)
-            plt.close()
+            if not chart_bytes:
+                await query.edit_message_text(
+                    get_text(user.lang, 'no_data_available'),
+                    parse_mode='Markdown'
+                )
+                return
             
-            # Calculate stats
-            current_price = prices[-1]
-            avg_price = sum(prices) / len(prices)
-            high_price = max(prices)
-            low_price = min(prices)
-            
+            # Create caption
             caption = (
-                f"📊 **{ticker} Chart** ({days} days)\n\n"
-                f"💰 Current: **${current_price:.2f}**\n"
-                f"📈 High: ${high_price:.2f}\n"
-                f"📉 Low: ${low_price:.2f}\n"
-                f"📊 Average: ${avg_price:.2f}"
+                f"📊 **{ticker}** ({period} days)\n\n"
+                f"💰 Current: **${stats['current']:.2f}**\n"
+                f"📈 High: ${stats['high']:.2f}\n"
+                f"📉 Low: ${stats['low']:.2f}\n"
+                f"📊 Average: ${stats['avg']:.2f}"
             )
             
             # Send chart
             await query.message.reply_photo(
-                photo=buf,
+                photo=chart_bytes,
                 caption=caption,
                 parse_mode='Markdown'
             )
             
             # Update original message
+            back_callback = 'stocks_global' if chart_type == 'global' else 'stocks_russian'
             keyboard = [
                 [InlineKeyboardButton(
                     get_text(user.lang, 'back'), 
-                    callback_data=f'stock_global_{ticker}'
+                    callback_data=back_callback
                 )]
             ]
             await query.edit_message_text(
@@ -326,8 +331,65 @@ class StocksHandler:
             )
             
         except Exception as e:
-            logger.error(f"Error generating chart: {e}")
+            logger.error(f"Error generating stock chart: {e}")
             await query.edit_message_text(
-                get_text(user.lang, 'chart_error', ticker=ticker),
+                get_text(user.lang, 'service_unavailable'),
+                parse_mode='Markdown'
+            )
+    
+    async def show_cbr_chart(self, query, user, currency: str, period: int = 30):
+        """Generate and show CBR rate chart."""
+        await query.edit_message_text(
+            f"📊 {get_text(user.lang, 'loading')}...",
+            parse_mode='Markdown'
+        )
+        
+        try:
+            # Get user theme preference
+            theme = getattr(user, 'chart_theme', 'light')
+            
+            # Generate chart using ChartGenerator
+            chart_bytes, stats = await self.bot.chart_generator.generate_cbr_chart(currency, period, theme)
+            
+            if not chart_bytes:
+                await query.edit_message_text(
+                    get_text(user.lang, 'no_data_available'),
+                    parse_mode='Markdown'
+                )
+                return
+            
+            # Create caption
+            caption = (
+                f"💵 **CBR Rate: {currency}/RUB** ({period} days)\n\n"
+                f"💰 Current: **{stats['current']:.4f} ₽**\n"
+                f"📈 High: {stats['high']:.4f} ₽\n"
+                f"📉 Low: {stats['low']:.4f} ₽\n"
+                f"📊 Average: {stats['avg']:.4f} ₽"
+            )
+            
+            # Send chart
+            await query.message.reply_photo(
+                photo=chart_bytes,
+                caption=caption,
+                parse_mode='Markdown'
+            )
+            
+            # Update original message
+            keyboard = [
+                [InlineKeyboardButton(
+                    get_text(user.lang, 'back'), 
+                    callback_data='cbr_rates'
+                )]
+            ]
+            await query.edit_message_text(
+                get_text(user.lang, 'chart_sent'),
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode='Markdown'
+            )
+            
+        except Exception as e:
+            logger.error(f"Error generating CBR chart: {e}")
+            await query.edit_message_text(
+                get_text(user.lang, 'service_unavailable'),
                 parse_mode='Markdown'
             )
