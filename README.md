@@ -1,8 +1,8 @@
-# 🪙 CoinFlow Bot v2.0 - Ultimate Edition
+# 🪙 CoinFlow Bot v2.1 - Ultimate Edition
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-2.0-orange.svg)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-2.1-orange.svg)
 
-**Advanced Telegram bot for currency conversion and cryptocurrency analysis with professional architecture**
+**Advanced Telegram bot for currency conversion, cryptocurrency analysis, portfolio management, and data export with professional architecture**
 
 [English](#english) | [Русский](#русский)
 
@@ -17,8 +17,11 @@
 - 📊 Real-time cryptocurrency analysis from 5+ exchanges
 - 📈 Global & Russian stock market analytics (35+ stocks)
 - 🎮 CS2 item price comparison across marketplaces
+- 💼 **Portfolio management** with real-time valuation (crypto/stocks/fiat/CS2)
+- 📊 **Portfolio visualization** with interactive pie charts
+- 📤 **Data export** to CSV & ZIP (portfolio, alerts, history)
 - 🔮 AI-powered price forecasting (ARIMA & Linear Regression)
-- 📈 Interactive charts and historical data visualization
+- 📈 Interactive charts with Dark/Light themes
 - 🧮 Built-in calculator with currency conversion support
 - 🔔 Automated price alerts and notifications
 
@@ -122,6 +125,38 @@
 - 🎮 **Gaming Market**: CS2 item prices from Steam Community Market and Skinport
 - 🌍 **Universal Coverage**: Crypto + Stocks + Gaming = All-in-one analytics tool
 
+### 🆕 What's New in v2.1
+
+**Portfolio Management System:**
+- 💼 **Multi-Asset Portfolio**: Track crypto, stocks, fiat, and CS2 items in one place
+- 💰 **Real-Time Valuation**: Automatic price updates using existing market integrations
+- 📊 **P/L Tracking**: Optional profit/loss calculation with purchase price tracking
+- 📈 **Distribution Analysis**: See portfolio breakdown by asset type
+- 🎨 **Visual Charts**: Interactive pie chart showing asset distribution
+- 🔄 **Live Updates**: Portfolio values update with current market prices
+- 🗑️ **Full CRUD**: Add, view, update, delete portfolio items
+
+**Data Export Functionality:**
+- 📤 **CSV Export**: Export portfolio, alerts, and conversion history to CSV format
+- 📦 **ZIP Archive**: Download all your data in a single compressed file
+- 💾 **Complete Backup**: Includes portfolio, alerts, history, favorites, and user settings
+- 📊 **Structured Data**: Clean, readable CSV format for analysis in Excel/Sheets
+- 🔒 **Privacy First**: All data exports are private and sent directly to you
+
+**Dark/Light Theme System:**
+- 🌓 **Theme Switching**: Choose between Light, Dark, or Auto themes for charts
+- 🎨 **Visual Consistency**: All charts and visualizations respect your theme preference
+- ⚙️ **Settings Integration**: Easy theme selection in Settings menu
+- 📊 **Enhanced Readability**: Optimized color schemes for both day and night use
+- 🔄 **Persistent Choice**: Theme preference saved to your profile
+
+**Technical Improvements:**
+- 🗄️ **Database Schema**: New PortfolioItem model with full schema support
+- 🔧 **Service Layer**: Dedicated PortfolioService and ExportService
+- 🎯 **Handler Architecture**: New PortfolioHandler (448 lines) and ExportHandler (200 lines)
+- 📝 **Extended Localization**: 80+ new strings in English and Russian
+- 🔗 **Seamless Integration**: Portfolio uses existing converter, stock, and CS2 services
+
 ### 📈 Stock Market Features (NEW!)
 
 #### 🌍 Global Stocks (20+ tickers)
@@ -189,12 +224,14 @@
 - ⚖️ **Compare Rates**: Cross-exchange price comparison for 1 unit
 - 📈 **Stocks**: Global stocks, Russian stocks (MOEX), CBR exchange rates
 - 🎮 **CS2 Skins**: CS2 item prices across Steam & Skinport marketplaces
+- 💼 **Portfolio**: Manage your multi-asset portfolio with real-time valuation
+- 📤 **Export**: Export your data to CSV or ZIP archive
 - 🧮 **Calculator**: Math expressions with currency conversion
 - 🔔 **Notifications**: Manage price alerts
 - ⭐ **Favorites**: Quick access to saved currencies
 - 📜 **History**: View last 10 conversions
 - 📊 **Statistics**: Personal usage stats and popular pairs
-- ⚙️ **Settings**: Bot configuration and language
+- ⚙️ **Settings**: Bot configuration, language, and theme
 
 **Slash Commands (also available as buttons):**
 - `/start` - Start/restart the bot
@@ -295,8 +332,13 @@ python main.py
 **CoinFlow** — ваш персональный финансовый ассистент в Telegram, который объединяет:
 - 💱 Продвинутый конвертер валют с множественными источниками (60+ валют)
 - 📊 Анализ криптовалют в реальном времени с 5+ бирж
+- 📈 Аналитика глобального и российского фондового рынка (35+ акций)
+- 🎮 Сравнение цен на предметы CS2 между площадками
+- 💼 **Управление портфелем** с оценкой в реальном времени (крипта/акции/фиат/CS2)
+- 📊 **Визуализация портфеля** с интерактивными круговыми диаграммами
+- 📤 **Экспорт данных** в CSV и ZIP (портфель, алерты, история)
 - 🔮 ИИ-прогнозирование цен (ARIMA и Линейная Регрессия)
-- 📈 Интерактивные графики и визуализация исторических данных
+- 📈 Интерактивные графики с темами Dark/Light
 - 🧮 Встроенный калькулятор с конвертацией валют
 - 🔔 Автоматические уведомления о ценах
 
@@ -368,6 +410,38 @@ python main.py
 - **English 🇬🇧:** Полный перевод
 - **Русский 🇷🇺:** Полный перевод
 - **Лёгкая смена языка:** Изменение в любое время в настройках
+
+### 🆕 Новое в v2.1
+
+**Система управления портфелем:**
+- 💼 **Мультиактивный портфель**: Отслеживайте крипту, акции, фиат и предметы CS2 в одном месте
+- 💰 **Оценка в реальном времени**: Автоматическое обновление цен через существующие интеграции
+- 📊 **Отслеживание P/L**: Опциональный расчёт прибыли/убытка с учётом цены покупки
+- 📈 **Анализ распределения**: Разбивка портфеля по типам активов
+- 🎨 **Визуальные графики**: Интерактивная круговая диаграмма распределения активов
+- 🔄 **Живые обновления**: Стоимость портфеля обновляется с текущими рыночными ценами
+- 🗑️ **Полный CRUD**: Добавление, просмотр, обновление, удаление элементов портфеля
+
+**Функциональность экспорта данных:**
+- 📤 **Экспорт CSV**: Экспорт портфеля, алертов и истории конвертаций в формат CSV
+- 📦 **ZIP-архив**: Загрузка всех данных в одном сжатом файле
+- 💾 **Полный бэкап**: Включает портфель, алерты, историю, избранное и настройки
+- 📊 **Структурированные данные**: Чистый, читаемый формат CSV для анализа в Excel/Sheets
+- 🔒 **Приватность превыше всего**: Все экспорты данных приватны и отправляются только вам
+
+**Система тем Dark/Light:**
+- 🌓 **Переключение темы**: Выбор между светлой, тёмной или автоматической темой для графиков
+- 🎨 **Визуальная согласованность**: Все графики и визуализации учитывают вашу тему
+- ⚙️ **Интеграция с настройками**: Удобный выбор темы в меню настроек
+- 📊 **Улучшенная читаемость**: Оптимизированные цветовые схемы для дневного и ночного использования
+- 🔄 **Постоянный выбор**: Предпочтение темы сохраняется в профиле
+
+**Технические улучшения:**
+- 🗄️ **Схема БД**: Новая модель PortfolioItem с полной поддержкой схемы
+- 🔧 **Сервисный слой**: Выделенные PortfolioService и ExportService
+- 🎯 **Архитектура обработчиков**: Новые PortfolioHandler (448 строк) и ExportHandler (200 строк)
+- 📝 **Расширенная локализация**: 80+ новых строк на английском и русском
+- 🔗 **Бесшовная интеграция**: Портфель использует существующие сервисы converter, stock и CS2
 
 ### 🛠️ Стек технологий
 
