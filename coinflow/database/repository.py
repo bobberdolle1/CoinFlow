@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, func
 from sqlalchemy.orm import Session, sessionmaker, scoped_session
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Tuple
-from .models import Base, User, Alert, ConversionHistory, Favorite, PortfolioItem, NewsSubscription, ReportSubscription, PredictionHistory
+from .models import Base, User, Alert, ConversionHistory, Favorite, PortfolioItem, NewsSubscription, ReportSubscription, PredictionHistory, Announcement
 
 
 class DatabaseRepository:
@@ -67,6 +67,14 @@ class DatabaseRepository:
                 session.commit()
                 session.refresh(user)
             return user
+        finally:
+            session.close()
+    
+    def get_all_users(self) -> List[User]:
+        """Get all users for broadcasting."""
+        session = self.get_session()
+        try:
+            return session.query(User).all()
         finally:
             session.close()
     

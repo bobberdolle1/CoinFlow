@@ -7,7 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import re
 from .database import DatabaseRepository
 from .services import CurrencyConverter, Calculator, ChartGenerator, PredictionGenerator, AlertManager, StockService, CS2MarketService, PortfolioService, ExportService, NewsService, ReportService, GoogleSheetsService, NotionService, VoiceService, AIService, AnalyticsService, TradingSignalsService, RebalanceService, SmartAlertsService
-from .handlers import CommandHandlers, MessageHandlers, CallbackHandlers, StocksHandler, CS2Handler, PortfolioHandler, ExportHandler, NewsHandler, ReportHandler, DashboardHandler, AIHandler, AnalyticsHandler, TradingHandler
+from .handlers import CommandHandlers, MessageHandlers, CallbackHandlers, StocksHandler, CS2Handler, PortfolioHandler, ExportHandler, NewsHandler, ReportHandler, DashboardHandler, AIHandler, AnalyticsHandler, TradingHandler, AdminHandler
 from .config import config
 from .utils import setup_logger, Metrics
 from .localization import get_text
@@ -69,6 +69,7 @@ class CoinFlowBot:
         self.ai_handler = AIHandler(self)
         self.analytics_handler = AnalyticsHandler(self)
         self.trading_handler = TradingHandler(self)
+        self.admin_handler = AdminHandler(self)
         
         logger.info("All services initialized")
         
@@ -336,6 +337,7 @@ def setup_bot() -> Application:
     app.add_handler(CommandHandler("history", bot.command_handlers.history_command))
     app.add_handler(CommandHandler("favorites", bot.command_handlers.favorites_command))
     app.add_handler(CommandHandler("cancel", bot.command_handlers.cancel_command))
+    app.add_handler(CommandHandler("admin", bot.command_handlers.admin_command))
     
     # Add message handler
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot.message_handlers.handle_message))

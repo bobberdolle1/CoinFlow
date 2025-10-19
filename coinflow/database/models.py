@@ -120,6 +120,24 @@ class PortfolioItem(Base):
         }
 
 
+class Announcement(Base):
+    """Announcement model for admin broadcasts."""
+    
+    __tablename__ = 'announcements'
+    
+    id = Column(Integer, primary_key=True)
+    admin_id = Column(Integer, nullable=False)
+    text = Column(String, nullable=False)
+    media_type = Column(String, nullable=True)  # 'photo', 'video', 'document', None
+    media_file_id = Column(String, nullable=True)  # Telegram file_id
+    sent_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    sent_at = Column(DateTime, nullable=True)
+    
+    def __repr__(self):
+        return f"<Announcement(id={self.id}, admin={self.admin_id}, sent={self.sent_count})>"
+
+
 class NewsSubscription(Base):
     """News subscription model for crypto news alerts."""
     

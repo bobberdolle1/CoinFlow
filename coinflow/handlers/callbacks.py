@@ -248,6 +248,20 @@ class CallbackHandlers:
             symbol = data.replace('signals_', '')
             await self.bot.trading_handler.show_signals_menu(query, context)
         
+        # Admin panel callbacks
+        elif data == 'admin_panel':
+            await self.bot.admin_handler.show_admin_panel(query, user)
+        elif data == 'admin_stats':
+            await self.bot.admin_handler.show_statistics(query, user)
+        elif data == 'admin_announce_create':
+            await self.bot.admin_handler.start_announcement_creation(query, user)
+        elif data == 'admin_announce_send':
+            await self.bot.admin_handler.broadcast_announcement(query, user)
+        elif data == 'admin_announce_history':
+            await self.bot.admin_handler.show_announcements_history(query, user)
+        elif data == 'admin_users':
+            await query.answer("User management coming soon!", show_alert=True)
+        
         # Back to main
         elif data == 'back_main':
             await query.message.reply_text(

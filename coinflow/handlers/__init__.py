@@ -13,5 +13,6 @@ from .dashboard_handler import DashboardHandler
 from .ai_handler import AIHandler
 from .analytics_handler import AnalyticsHandler
 from .trading_handler import TradingHandler
+from .admin_handler import AdminHandler
 
-__all__ = ['CommandHandlers', 'CallbackHandlers', 'MessageHandlers', 'StocksHandler', 'CS2Handler', 'PortfolioHandler', 'ExportHandler', 'NewsHandler', 'ReportHandler', 'DashboardHandler', 'AIHandler', 'AnalyticsHandler', 'TradingHandler']
+__all__ = ['CommandHandlers', 'CallbackHandlers', 'MessageHandlers', 'StocksHandler', 'CS2Handler', 'PortfolioHandler', 'ExportHandler', 'NewsHandler', 'ReportHandler', 'DashboardHandler', 'AIHandler', 'AnalyticsHandler', 'TradingHandler', 'AdminHandler']

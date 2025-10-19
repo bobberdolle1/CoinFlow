@@ -138,6 +138,13 @@ class MessageHandlers:
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle all text messages."""
         user_id = update.effective_user.id
+        
+        # Check if admin is creating announcement
+        user_state = self.bot.temp_storage.get(user_id, {})
+        if user_state.get('state') == 'awaiting_announcement_content':
+            await self.bot.admin_handler.handle_announcement_content(update, context)
+            return
+        
         text = update.message.text
         
         user = self.bot.db.get_or_create_user(user_id)

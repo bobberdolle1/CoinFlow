@@ -28,6 +28,9 @@ class Config:
     OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434')
     OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2:3b')
     
+    # Admin settings
+    ADMIN_IDS = [int(x) for x in os.getenv('ADMIN_IDS', '').split(',') if x.strip()]
+    
     # Chart settings
     CHART_DPI = int(os.getenv("CHART_DPI", "150"))
     DEFAULT_CHART_PERIOD = int(os.getenv("DEFAULT_CHART_PERIOD", "30"))
