@@ -1,16 +1,27 @@
 """Price prediction service using AI models."""
 
 import io
+import aiohttp
+import xml.etree.ElementTree as ET
 import yfinance as yf
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from sklearn.linear_model import LinearRegression
 from statsmodels.tsa.arima.model import ARIMA
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, List
 from ..utils.logger import setup_logger
 import warnings
 warnings.filterwarnings('ignore')
+
+# Try to import Prophet
+try:
+    from prophet import Prophet
+    PROPHET_AVAILABLE = True
+except ImportError:
+    PROPHET_AVAILABLE = False
+    logger = setup_logger('prediction')
+    logger.warning("Prophet not installed. Install with: pip install prophet")
 
 logger = setup_logger('prediction')
 
@@ -18,9 +29,72 @@ logger = setup_logger('prediction')
 class PredictionGenerator:
     """Генератор прогнозов курсов."""
     
+    # CBR currency codes mapping
+    CBR_CURRENCY_CODES = {
+        'USD': 'R01235',
+        'EUR': 'R01239',
+        'CNY': 'R01375',
+        'GBP': 'R01035',
+        'JPY': 'R01820',
+        'TRY': 'R01700',
+        'KZT': 'R01335',
+        'BYN': 'R01090'
+    }
+    
     def __init__(self, dpi: int = 150, db = None):
         self.dpi = dpi
         self.db = db
+    
+    async def fetch_cbr_historical_rates(self, currency: str, days: int = 90) -> List[Tuple[datetime, float]]:
+        """
+        Fetch historical CBR rates for prediction.
+        
+        Args:
+            currency: Currency code (USD, EUR, etc.)
+            days: Number of days to fetch
+        
+        Returns:
+            List of (date, rate) tuples
+        """
+        try:
+            currency_code = self.CBR_CURRENCY_CODES.get(currency)
+            if not currency_code:
+                logger.error(f"Unknown CBR currency: {currency}")
+                return []
+            
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=days)
+            
+            date_from = start_date.strftime('%d/%m/%Y')
+            date_to = end_date.strftime('%d/%m/%Y')
+            
+            url = f"https://www.cbr.ru/scripts/XML_dynamic.asp?date_req1={date_from}&date_req2={date_to}&VAL_NM_RQ={currency_code}"
+            
+            logger.info(f"Fetching CBR historical rates for {currency} from {date_from} to {date_to}")
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status != 200:
+                        logger.error(f"CBR API error: {response.status}")
+                        return []
+                    xml_data = await response.text()
+            
+            root = ET.fromstring(xml_data)
+            rates = []
+            
+            for record in root.findall('Record'):
+                date_str = record.get('Date')
+                value_str = record.find('Value').text
+                date = datetime.strptime(date_str, '%d.%m.%Y')
+                value = float(value_str.replace(',', '.'))
+                rates.append((date, value))
+            
+            logger.info(f"Fetched {len(rates)} CBR rates for {currency}")
+            return rates
+        
+        except Exception as e:
+            logger.error(f"Error fetching CBR rates for {currency}: {e}")
+            return []
     
     def generate_prediction(self, pair: str, model_type: str = 'arima', 
                           days: int = 90, forecast_days: int = 7) -> Tuple[Optional[bytes], Dict]:
@@ -66,7 +140,28 @@ class PredictionGenerator:
             forecast = None
             confidence = 'medium'
             
-            if model_type == 'arima':
+            if model_type == 'prophet' and PROPHET_AVAILABLE:
+                try:
+                    # Prepare data for Prophet
+                    prophet_df = df.reset_index()[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+                    
+                    # Create and fit model
+                    model = Prophet(daily_seasonality=True)
+                    model.fit(prophet_df)
+                    
+                    # Make future predictions
+                    future = model.make_future_dataframe(periods=forecast_days)
+                    forecast_df = model.predict(future)
+                    
+                    # Extract forecast values
+                    forecast = forecast_df['yhat'].tail(forecast_days).values
+                    confidence = 'high'
+                    logger.info(f"Prophet forecast completed for {pair}")
+                except Exception as e:
+                    logger.warning(f"Prophet failed for {pair}, falling back to ARIMA: {e}")
+                    model_type = 'arima'
+            
+            if model_type == 'arima' and forecast is None:
                 try:
                     model = ARIMA(prices, order=(5, 1, 0))
                     model_fit = model.fit()
@@ -195,3 +290,298 @@ class PredictionGenerator:
         except Exception as e:
             logger.error(f"Error getting accuracy stats: {e}")
             return None
+    
+    async def generate_cbr_prediction(self, currency: str, model_type: str = 'arima',
+                                     days: int = 90, forecast_days: int = 7) -> Tuple[Optional[bytes], Dict]:
+        """
+        Generate prediction for CBR exchange rates.
+        
+        Args:
+            currency: Currency code (USD, EUR, etc.)
+            model_type: 'arima', 'linear', or 'prophet'
+            days: Historical days to analyze
+            forecast_days: Days to forecast ahead
+        
+        Returns:
+            Tuple of (image bytes, statistics dict)
+        """
+        try:
+            logger.info(f"Generating CBR prediction for {currency}, model: {model_type}, days: {days}")
+            
+            # Fetch CBR historical data
+            rates_data = await self.fetch_cbr_historical_rates(currency, days)
+            
+            if not rates_data or len(rates_data) < 30:
+                logger.warning(f"Insufficient CBR data for {currency}")
+                return None, {'error': 'insufficient_data', 'pair': f"{currency}/RUB", 'days_available': len(rates_data)}
+            
+            # Extract prices
+            dates = [item[0] for item in rates_data]
+            prices = np.array([item[1] for item in rates_data])
+            current_price = prices[-1]
+            
+            # Validate price data
+            if current_price <= 0 or np.isnan(current_price):
+                logger.error(f"Invalid current CBR rate for {currency}: {current_price}")
+                return None, {'error': 'invalid_price', 'pair': f"{currency}/RUB"}
+            
+            # Forecasting (same logic as crypto)
+            forecast = None
+            confidence = 'medium'
+            
+            if model_type == 'prophet' and PROPHET_AVAILABLE:
+                try:
+                    import pandas as pd
+                    prophet_df = pd.DataFrame({'ds': dates, 'y': prices})
+                    model = Prophet(daily_seasonality=True)
+                    model.fit(prophet_df)
+                    future = model.make_future_dataframe(periods=forecast_days)
+                    forecast_df = model.predict(future)
+                    forecast = forecast_df['yhat'].tail(forecast_days).values
+                    confidence = 'high'
+                    logger.info(f"Prophet forecast completed for CBR {currency}")
+                except Exception as e:
+                    logger.warning(f"Prophet failed for CBR {currency}, falling back to ARIMA: {e}")
+                    model_type = 'arima'
+            
+            if model_type == 'arima' and forecast is None:
+                try:
+                    model = ARIMA(prices, order=(5, 1, 0))
+                    model_fit = model.fit()
+                    forecast = model_fit.forecast(steps=forecast_days)
+                    confidence = 'high'
+                    logger.info(f"ARIMA forecast completed for CBR {currency}")
+                except Exception as e:
+                    logger.warning(f"ARIMA failed for CBR {currency}, falling back to linear: {e}")
+                    model_type = 'linear'
+            
+            if model_type == 'linear' or forecast is None:
+                X = np.arange(len(prices)).reshape(-1, 1)
+                y = prices
+                model = LinearRegression()
+                model.fit(X, y)
+                future_X = np.arange(len(prices), len(prices) + forecast_days).reshape(-1, 1)
+                forecast = model.predict(future_X)
+                confidence = 'medium'
+                logger.info(f"Linear regression forecast completed for CBR {currency}")
+            
+            # Validate forecast
+            if forecast is None or len(forecast) == 0:
+                logger.error(f"CBR forecast generation failed for {currency}")
+                return None, {'error': 'forecast_failed', 'pair': f"{currency}/RUB"}
+            
+            forecast_price = forecast[-1]
+            
+            if forecast_price <= 0 or np.isnan(forecast_price):
+                logger.error(f"Invalid CBR forecast price for {currency}: {forecast_price}")
+                return None, {'error': 'invalid_forecast', 'pair': f"{currency}/RUB"}
+            
+            # Calculate statistics
+            price_change = forecast_price - current_price
+            price_change_pct = (price_change / current_price) * 100
+            trend = 'up' if forecast_price > current_price else 'down'
+            
+            stats = {
+                'model': model_type.upper(),
+                'current': round(current_price, 4),
+                'predicted': round(forecast_price, 4),
+                'change': round(price_change_pct, 2),
+                'trend': '📈 Upward' if trend == 'up' else '📉 Downward',
+                'confidence': confidence,
+                'data_source': 'CBR API',
+                'days_analyzed': len(rates_data),
+                'forecast_date': (datetime.now() + timedelta(days=forecast_days)).strftime('%Y-%m-%d'),
+                'model_type': model_type,
+                'forecast_days': forecast_days
+            }
+            
+            # Create chart
+            plt.figure(figsize=(12, 6))
+            
+            # Historical data
+            hist_x = np.arange(len(prices))
+            plt.plot(hist_x, prices, label='Historical Data', linewidth=2, color='#2196F3')
+            
+            # Forecast
+            forecast_x = np.arange(len(prices), len(prices) + forecast_days)
+            plt.plot(forecast_x, forecast, label='Forecast', linewidth=2, 
+                    color='#FF5722', linestyle='--')
+            
+            # Trend line
+            all_x = np.concatenate([hist_x, forecast_x])
+            all_prices = np.concatenate([prices, forecast])
+            z = np.polyfit(all_x, all_prices, 1)
+            p = np.poly1d(z)
+            plt.plot(all_x, p(all_x), 'g--', alpha=0.5, label='Trend Line')
+            
+            plt.title(f'CBR Rate: {currency}/RUB - {forecast_days} Day Forecast ({model_type.upper()})', 
+                     fontsize=16, fontweight='bold')
+            plt.xlabel('Days', fontsize=12)
+            plt.ylabel('Rate (RUB)', fontsize=12)
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            plt.axvline(x=len(prices)-1, color='red', linestyle=':', alpha=0.5)
+            plt.tight_layout()
+            
+            # Save to buffer
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=self.dpi)
+            buf.seek(0)
+            plt.close()
+            
+            logger.info(f"CBR prediction generated successfully for {currency}")
+            return buf.getvalue(), stats
+        
+        except Exception as e:
+            logger.error(f"CBR prediction generation error for {currency}: {e}", exc_info=True)
+            return None, {'error': 'exception', 'pair': f"{currency}/RUB", 'message': str(e)}
+    
+    def generate_stock_prediction(self, ticker: str, model_type: str = 'arima',
+                                 days: int = 90, forecast_days: int = 7) -> Tuple[Optional[bytes], Dict]:
+        """
+        Generate prediction for stock prices.
+        
+        Args:
+            ticker: Stock ticker (e.g., 'AAPL', 'SBER.ME')
+            model_type: 'arima', 'linear', or 'prophet'
+            days: Historical days to analyze
+            forecast_days: Days to forecast ahead
+        
+        Returns:
+            Tuple of (image bytes, statistics dict)
+        """
+        try:
+            logger.info(f"Generating stock prediction for {ticker}, model: {model_type}, days: {days}")
+            
+            # Fetch stock data via yfinance
+            stock = yf.Ticker(ticker)
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=days)
+            df = stock.history(start=start_date, end=end_date)
+            
+            # Validate data availability
+            if df.empty:
+                logger.warning(f"No stock data available for {ticker}")
+                return None, {'error': 'no_data', 'pair': ticker}
+            
+            if len(df) < 30:
+                logger.warning(f"Insufficient stock data for {ticker}: only {len(df)} days")
+                return None, {'error': 'insufficient_data', 'pair': ticker, 'days_available': len(df)}
+            
+            prices = df['Close'].values
+            current_price = prices[-1]
+            
+            # Validate price data
+            if current_price <= 0 or np.isnan(current_price):
+                logger.error(f"Invalid current stock price for {ticker}: {current_price}")
+                return None, {'error': 'invalid_price', 'pair': ticker}
+            
+            # Forecasting (same logic as crypto)
+            forecast = None
+            confidence = 'medium'
+            
+            if model_type == 'prophet' and PROPHET_AVAILABLE:
+                try:
+                    prophet_df = df.reset_index()[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+                    model = Prophet(daily_seasonality=True)
+                    model.fit(prophet_df)
+                    future = model.make_future_dataframe(periods=forecast_days)
+                    forecast_df = model.predict(future)
+                    forecast = forecast_df['yhat'].tail(forecast_days).values
+                    confidence = 'high'
+                    logger.info(f"Prophet forecast completed for stock {ticker}")
+                except Exception as e:
+                    logger.warning(f"Prophet failed for stock {ticker}, falling back to ARIMA: {e}")
+                    model_type = 'arima'
+            
+            if model_type == 'arima' and forecast is None:
+                try:
+                    model = ARIMA(prices, order=(5, 1, 0))
+                    model_fit = model.fit()
+                    forecast = model_fit.forecast(steps=forecast_days)
+                    confidence = 'high'
+                    logger.info(f"ARIMA forecast completed for stock {ticker}")
+                except Exception as e:
+                    logger.warning(f"ARIMA failed for stock {ticker}, falling back to linear: {e}")
+                    model_type = 'linear'
+            
+            if model_type == 'linear' or forecast is None:
+                X = np.arange(len(prices)).reshape(-1, 1)
+                y = prices
+                model = LinearRegression()
+                model.fit(X, y)
+                future_X = np.arange(len(prices), len(prices) + forecast_days).reshape(-1, 1)
+                forecast = model.predict(future_X)
+                confidence = 'medium'
+                logger.info(f"Linear regression forecast completed for stock {ticker}")
+            
+            # Validate forecast
+            if forecast is None or len(forecast) == 0:
+                logger.error(f"Stock forecast generation failed for {ticker}")
+                return None, {'error': 'forecast_failed', 'pair': ticker}
+            
+            forecast_price = forecast[-1]
+            
+            if forecast_price <= 0 or np.isnan(forecast_price):
+                logger.error(f"Invalid stock forecast price for {ticker}: {forecast_price}")
+                return None, {'error': 'invalid_forecast', 'pair': ticker}
+            
+            # Calculate statistics
+            price_change = forecast_price - current_price
+            price_change_pct = (price_change / current_price) * 100
+            trend = 'up' if forecast_price > current_price else 'down'
+            
+            stats = {
+                'model': model_type.upper(),
+                'current': round(current_price, 2),
+                'predicted': round(forecast_price, 2),
+                'change': round(price_change_pct, 2),
+                'trend': '📈 Upward' if trend == 'up' else '📉 Downward',
+                'confidence': confidence,
+                'data_source': 'Yahoo Finance',
+                'days_analyzed': len(df),
+                'forecast_date': (datetime.now() + timedelta(days=forecast_days)).strftime('%Y-%m-%d'),
+                'model_type': model_type,
+                'forecast_days': forecast_days
+            }
+            
+            # Create chart
+            plt.figure(figsize=(12, 6))
+            
+            # Historical data
+            dates = np.arange(len(prices))
+            plt.plot(dates, prices, label='Historical Data', linewidth=2, color='#2196F3')
+            
+            # Forecast
+            forecast_dates = np.arange(len(prices), len(prices) + forecast_days)
+            plt.plot(forecast_dates, forecast, label='Forecast', linewidth=2, 
+                    color='#FF5722', linestyle='--')
+            
+            # Trend line
+            all_dates = np.concatenate([dates, forecast_dates])
+            all_prices = np.concatenate([prices, forecast])
+            z = np.polyfit(all_dates, all_prices, 1)
+            p = np.poly1d(z)
+            plt.plot(all_dates, p(all_dates), 'g--', alpha=0.5, label='Trend Line')
+            
+            plt.title(f'{ticker} - {forecast_days} Day Forecast ({model_type.upper()})', 
+                     fontsize=16, fontweight='bold')
+            plt.xlabel('Days', fontsize=12)
+            plt.ylabel('Price ($)', fontsize=12)
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            plt.axvline(x=len(prices)-1, color='red', linestyle=':', alpha=0.5)
+            plt.tight_layout()
+            
+            # Save to buffer
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=self.dpi)
+            buf.seek(0)
+            plt.close()
+            
+            logger.info(f"Stock prediction generated successfully for {ticker}")
+            return buf.getvalue(), stats
+        
+        except Exception as e:
+            logger.error(f"Stock prediction generation error for {ticker}: {e}", exc_info=True)
+            return None, {'error': 'exception', 'pair': ticker, 'message': str(e)}

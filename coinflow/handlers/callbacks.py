@@ -98,6 +98,31 @@ class CallbackHandlers:
             convert_type = data.replace('convert_type_', '')
             await self.handle_conversion_type_selection(query, user, context, convert_type)
         
+        # Prediction type selection
+        elif data.startswith('prediction_type_'):
+            prediction_type = data.replace('prediction_type_', '')
+            await self.handle_prediction_type_selection(query, user, context, prediction_type)
+        
+        # Prediction stock market selection
+        elif data.startswith('prediction_stocks_'):
+            market_type = data.replace('prediction_stocks_', '')
+            await self.show_prediction_stock_selection(query, user, context, market_type)
+        
+        # Prediction CBR currency selection
+        elif data.startswith('prediction_cbr_'):
+            currency = data.replace('prediction_cbr_', '')
+            context.user_data['prediction_asset'] = currency
+            context.user_data['prediction_type'] = 'cbr'
+            context.user_data['state'] = 'select_prediction'
+            await self.generate_prediction(query, user, currency)
+        
+        # Prediction stock ticker selection
+        elif data.startswith('prediction_stock_'):
+            ticker = data.replace('prediction_stock_', '')
+            context.user_data['prediction_asset'] = ticker
+            context.user_data['state'] = 'select_prediction'
+            await self.generate_prediction(query, user, ticker)
+        
         # Settings callbacks
         elif data.startswith('settings_'):
             await self.handle_settings_callback(query, user, data)
@@ -486,11 +511,124 @@ class CallbackHandlers:
         )
     
     async def start_prediction_selection(self, update, user, context):
-        """Start prediction selection flow."""
-        context.user_data['state'] = 'select_prediction'
+        """Start prediction selection flow - show asset type selection."""
+        context.user_data['state'] = 'select_prediction_type'
+        
+        keyboard = [
+            [InlineKeyboardButton(
+                get_text(user.lang, 'crypto_rates'),
+                callback_data='prediction_type_crypto'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'stocks'),
+                callback_data='prediction_type_stocks'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'cbr_rates'),
+                callback_data='prediction_type_cbr'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'back'),
+                callback_data='back_main'
+            )]
+        ]
+        
         await update.message.reply_text(
-            get_text(user.lang, 'select_currency_prediction'),
-            reply_markup=self.bot.get_currency_selection_keyboard(user.lang, 'crypto'),
+            get_text(user.lang, 'select_prediction_type'),
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    async def handle_prediction_type_selection(self, query, user, context, prediction_type: str):
+        """Handle prediction type selection (crypto, stocks, cbr)."""
+        context.user_data['prediction_type'] = prediction_type
+        
+        if prediction_type == 'crypto':
+            # Show cryptocurrency selection
+            context.user_data['state'] = 'select_prediction'
+            await query.edit_message_text(
+                get_text(user.lang, 'select_currency_prediction'),
+                reply_markup=self.bot.get_currency_selection_keyboard(user.lang, 'crypto'),
+                parse_mode='Markdown'
+            )
+        
+        elif prediction_type == 'stocks':
+            # Show stock market selection (global/russian)
+            keyboard = [
+                [InlineKeyboardButton(
+                    get_text(user.lang, 'stocks_global'),
+                    callback_data='prediction_stocks_global'
+                )],
+                [InlineKeyboardButton(
+                    get_text(user.lang, 'stocks_russian'),
+                    callback_data='prediction_stocks_russian'
+                )],
+                [InlineKeyboardButton(
+                    get_text(user.lang, 'back'),
+                    callback_data='back_prediction_type'
+                )]
+            ]
+            await query.edit_message_text(
+                get_text(user.lang, 'select_stock_market'),
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode='Markdown'
+            )
+        
+        elif prediction_type == 'cbr':
+            # Show CBR currencies selection
+            from ..services.stock_service import StockService
+            currencies = list(StockService.CBR_CURRENCIES.keys())
+            
+            keyboard = []
+            row = []
+            for currency in currencies:
+                row.append(InlineKeyboardButton(currency, callback_data=f'prediction_cbr_{currency}'))
+                if len(row) == 4:
+                    keyboard.append(row)
+                    row = []
+            if row:
+                keyboard.append(row)
+            
+            keyboard.append([InlineKeyboardButton(
+                get_text(user.lang, 'back'),
+                callback_data='back_prediction_type'
+            )])
+            
+            await query.edit_message_text(
+                get_text(user.lang, 'cbr_rates_select'),
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode='Markdown'
+            )
+    
+    async def show_prediction_stock_selection(self, query, user, context, market_type: str):
+        """Show stock selection for predictions."""
+        context.user_data['stock_type'] = market_type
+        context.user_data['prediction_type'] = 'stock'
+        
+        if market_type == 'global':
+            stocks = list(self.bot.stock_service.GLOBAL_STOCKS.keys())[:24]
+        else:
+            stocks = list(self.bot.stock_service.RUSSIAN_STOCKS.keys())[:18]
+        
+        keyboard = []
+        row = []
+        for ticker in stocks:
+            row.append(InlineKeyboardButton(ticker, callback_data=f'prediction_stock_{ticker}'))
+            if len(row) == 3:
+                keyboard.append(row)
+                row = []
+        if row:
+            keyboard.append(row)
+        
+        keyboard.append([InlineKeyboardButton(
+            get_text(user.lang, 'back'),
+            callback_data='prediction_type_stocks'
+        )])
+        
+        select_key = 'stocks_global_select' if market_type == 'global' else 'stocks_russian_select'
+        await query.edit_message_text(
+            get_text(user.lang, select_key),
+            reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode='Markdown'
         )
     
@@ -766,11 +904,23 @@ class CallbackHandlers:
             await query.edit_message_text('❌ Chart generation failed. Please try again.', parse_mode='Markdown')
     
     async def generate_prediction(self, query, user, pair):
-        """Generate prediction for pair (price of 1 unit)."""
-        await query.edit_message_text(f"🔮 Generating AI forecast for **1 {pair}**...\n\nAnalyzing 90 days of data...", parse_mode='Markdown')
+        """Generate prediction for asset (crypto, stock, or CBR)."""
+        context = query._bot.user_data.get(user.telegram_id, {})
+        prediction_type = context.get('prediction_type', 'crypto')
+        
+        await query.edit_message_text(f"🔮 Generating AI forecast for **{pair}**...\n\nAnalyzing 90 days of data...", parse_mode='Markdown')
         
         model = user.prediction_model or 'arima'
-        pred_data, stats = self.bot.prediction_generator.generate_prediction(f"{pair}-USD", model, 90)
+        
+        # Generate prediction based on asset type
+        if prediction_type == 'cbr':
+            pred_data, stats = await self.bot.prediction_generator.generate_cbr_prediction(pair, model, 90)
+        elif prediction_type == 'stock':
+            stock_type = context.get('stock_type', 'global')
+            ticker = f"{pair}.ME" if stock_type == 'russian' and not pair.endswith('.ME') else pair
+            pred_data, stats = self.bot.prediction_generator.generate_stock_prediction(ticker, model, 90)
+        else:  # crypto
+            pred_data, stats = self.bot.prediction_generator.generate_prediction(f"{pair}-USD", model, 90)
         
         # Check for errors in stats
         if stats and 'error' in stats:
@@ -826,11 +976,21 @@ class CallbackHandlers:
                 )
                 return
             
-            # Format prediction for 1 unit with all new fields
+            # Format prediction caption based on asset type
+            if prediction_type == 'cbr':
+                asset_label = f"{pair}/RUB"
+                price_symbol = '₽'
+            elif prediction_type == 'stock':
+                asset_label = pair
+                price_symbol = '$'
+            else:  # crypto
+                asset_label = f"{pair}/USD"
+                price_symbol = '$'
+            
             caption = (
-                f"🔮 **{pair}/USD AI Forecast**\n\n"
-                f"📊 **Current Price:** ${current:.2f}\n"
-                f"🎯 **7-Day Forecast:** ${predicted:.2f}\n"
+                f"🔮 **{asset_label} AI Forecast**\n\n"
+                f"📊 **Current Price:** {price_symbol}{current:.2f}\n"
+                f"🎯 **7-Day Forecast:** {price_symbol}{predicted:.2f}\n"
                 f"📈 **Expected Change:** {stats.get('change', 0):+.2f}%\n"
                 f"📉 **Trend:** {stats.get('trend', 'Unknown')}\n\n"
                 f"🤖 **Model:** {stats.get('model', model.upper())}\n"

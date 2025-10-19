@@ -55,6 +55,7 @@ LOCALIZATION = {
         'history_empty': 'No conversion history yet.\n\nStart converting currencies!',
         'history_list': '📜 *Your Conversion History:*\n\n{history}',
         'select_chart_type': '📊 *Rate Charts*\n\nSelect asset type:',
+        'select_prediction_type': '🔮 *Rate Forecast*\n\nSelect asset type:',
         'select_stock_market': '📈 *Select stock market:*\n\nChoose market type:',
         'select_currency_chart': '📊 *Select currency for chart:*\n\nChoose the cryptocurrency:',
         'select_currency_prediction': '🔮 *Select currency for AI forecast:*\n\nChoose the cryptocurrency:',
@@ -251,6 +252,7 @@ LOCALIZATION = {
         'history_empty': 'История конвертаций пока пуста.\n\nНачните конвертировать валюты!',
         'history_list': '📜 *Ваша история конвертаций:*\n\n{history}',
         'select_chart_type': '📊 *Графики курсов*\n\nВыберите тип актива:',
+        'select_prediction_type': '🔮 *Прогноз курсов*\n\nВыберите тип актива:',
         'select_stock_market': '📈 *Выберите фондовый рынок:*\n\nВыберите тип рынка:',
         'select_currency_chart': '📊 *Выберите валюту для графика:*\n\nВыберите криптовалюту:',
         'select_currency_prediction': '🔮 *Выберите валюту для AI-прогноза:*\n\nВыберите криптовалюту:',
@@ -258,7 +260,7 @@ LOCALIZATION = {
         'settings_updated': '✅ Настройки успешно обновлены!',
         'language_changed': '🌍 Язык изменён на: {lang}',
         'about_text': 'ℹ️ *О боте CoinFlow v2.0*\n\n🪙 CoinFlow — ваш финансовый ассистент с продвинутыми возможностями:\n\n*Новое в v2.0:*\n• 💾 Постоянная база данных\n• ⭐ Система избранного\n• 📜 История конвертаций\n• ⚡ Умное кэширование\n• 📊 Статистика пользователей\n• 🔒 Улучшенная безопасность\n• 🚀 Лучшая производительность\n\n*Возможности:*\n• 💱 60+ валют\n• 📊 5+ бирж\n• 📈 Исторические графики\n• 🔮 ИИ-прогнозирование\n• 🔔 Ценовые уведомления\n• 🧮 Калькулятор\n\n📖 [GitHub](https://github.com/bobberdolle1/CoinFlow)\n\n⚠️ Не является финансовым советом!',
-
+        
         # Stocks
         'stocks': '📈 Акции',
         'stocks_menu': '📈 *Фондовый рынок*\n\nВыберите рынок:',
