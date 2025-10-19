@@ -6,8 +6,8 @@ from telegram import InlineQueryResultArticle, InputTextMessageContent
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
 from .database import DatabaseRepository
-from .services import CurrencyConverter, Calculator, ChartGenerator, PredictionGenerator, AlertManager, StockService, CS2MarketService, PortfolioService, ExportService, NewsService, ReportService, GoogleSheetsService, NotionService, VoiceService, AIService
-from .handlers import CommandHandlers, MessageHandlers, CallbackHandlers, StocksHandler, CS2Handler, PortfolioHandler, ExportHandler, NewsHandler, ReportHandler, DashboardHandler, AIHandler
+from .services import CurrencyConverter, Calculator, ChartGenerator, PredictionGenerator, AlertManager, StockService, CS2MarketService, PortfolioService, ExportService, NewsService, ReportService, GoogleSheetsService, NotionService, VoiceService, AIService, AnalyticsService, TradingSignalsService, RebalanceService, SmartAlertsService
+from .handlers import CommandHandlers, MessageHandlers, CallbackHandlers, StocksHandler, CS2Handler, PortfolioHandler, ExportHandler, NewsHandler, ReportHandler, DashboardHandler, AIHandler, AnalyticsHandler, TradingHandler
 from .config import config
 from .utils import setup_logger, Metrics
 from .localization import get_text
@@ -44,6 +44,10 @@ class CoinFlowBot:
         self.notion_service = NotionService(self.db)
         self.voice_service = VoiceService()
         self.ai_service = AIService(ollama_url=config.OLLAMA_URL, model=config.OLLAMA_MODEL)
+        self.analytics_service = AnalyticsService(self.converter, self.stock_service)
+        self.trading_service = TradingSignalsService(self.stock_service)
+        self.rebalance_service = RebalanceService(self.db, self.portfolio_service)
+        self.smart_alerts_service = SmartAlertsService(self.db, self.stock_service, self.analytics_service)
         
         # Metrics
         self.metrics = Metrics()
@@ -63,6 +67,8 @@ class CoinFlowBot:
         self.report_handler = ReportHandler(self)
         self.dashboard_handler = DashboardHandler(self)
         self.ai_handler = AIHandler(self)
+        self.analytics_handler = AnalyticsHandler(self)
+        self.trading_handler = TradingHandler(self)
         
         logger.info("All services initialized")
         
@@ -88,8 +94,9 @@ class CoinFlowBot:
             [get_text(lang, 'stocks'), get_text(lang, 'cs2_skins')],
             [get_text(lang, 'portfolio'), get_text(lang, 'export')],
             [get_text(lang, 'news'), get_text(lang, 'reports')],
-            [get_text(lang, 'notifications'), get_text(lang, 'favorites')],
+            [get_text(lang, 'analytics'), get_text(lang, 'trading_signals')],
             [get_text(lang, 'ai_assistant'), get_text(lang, 'dashboard')],
+            [get_text(lang, 'notifications'), get_text(lang, 'favorites')],
             [get_text(lang, 'history'), get_text(lang, 'stats_btn')],
             [get_text(lang, 'settings'), get_text(lang, 'about_btn')]
         ], resize_keyboard=True)

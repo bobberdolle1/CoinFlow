@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coinflow"
-version = "2.6.0"
+version = "2.7.0"
 description = "Advanced Telegram Bot for currency conversion and cryptocurrency analysis"
 authors = ["bobberdolle1 <kirillkrovyakov@yandex.com>"]
 license = "MIT"

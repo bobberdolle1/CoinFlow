@@ -123,9 +123,18 @@ class CallbackHandlers:
         elif data.startswith('portfolio_delete_confirm_'):
             item_id = int(data.replace('portfolio_delete_confirm_', ''))
             await self.bot.portfolio_handler.handle_delete_confirm(query, user, item_id)
-        elif data.startswith('portfolio_delete_'):
-            item_id = int(data.replace('portfolio_delete_', ''))
-            await self.bot.portfolio_handler.handle_delete_item(query, user, item_id)
+        elif data.startswith('portfolio_remove_'):
+            item_id = int(data.replace('portfolio_remove_', ''))
+            await self.bot.portfolio_handler.confirm_remove_item(query, user, item_id)
+        elif data == 'portfolio_rebalance':
+            await self.bot.portfolio_handler.show_rebalance_menu(query, user)
+        elif data == 'rebalance_presets':
+            await self.bot.portfolio_handler.show_preset_strategies(query, user)
+        elif data.startswith('rebalance_apply_'):
+            strategy = data.replace('rebalance_apply_', '')
+            await self.bot.portfolio_handler.apply_rebalancing_strategy(query, user, strategy)
+        elif data == 'rebalance_custom':
+            await query.answer("Custom allocation coming soon!", show_alert=True)
         
         # Export callbacks
         elif data == 'export_menu':
@@ -208,6 +217,36 @@ class CallbackHandlers:
             await self.bot.ai_handler.handle_portfolio_insights(query, user)
         elif data == 'ai_suggest':
             await self.bot.ai_handler.handle_suggestions(query, user)
+        
+        # Analytics callbacks
+        elif data == 'analytics_menu':
+            await self.bot.analytics_handler.show_analytics_menu(query, context)
+        elif data == 'analytics_asset':
+            await self.bot.analytics_handler.show_asset_selection(query, user, 'analyze')
+        elif data.startswith('analyze_'):
+            symbol = data.replace('analyze_', '')
+            await self.bot.analytics_handler.perform_asset_analytics(query, user, symbol)
+        elif data == 'analytics_correlation':
+            await self.bot.analytics_handler.show_correlation_selection(query, user)
+        elif data.startswith('corr1_'):
+            symbol = data.replace('corr1_', '')
+            await self.bot.analytics_handler.handle_correlation_asset1(query, user, symbol)
+        elif data.startswith('corr2_'):
+            symbol = data.replace('corr2_', '')
+            await self.bot.analytics_handler.perform_correlation_analysis(query, user, symbol)
+        elif data == 'analytics_portfolio':
+            # TODO: Implement portfolio analytics
+            await query.answer("Portfolio analytics coming soon!", show_alert=True)
+        
+        # Trading signals callbacks
+        elif data == 'signals_menu':
+            await self.bot.trading_handler.show_signals_menu(query, context)
+        elif data.startswith('signal_'):
+            symbol = data.replace('signal_', '')
+            await self.bot.trading_handler.show_trading_signals(query, user, symbol)
+        elif data.startswith('signals_'):
+            symbol = data.replace('signals_', '')
+            await self.bot.trading_handler.show_signals_menu(query, context)
         
         # Back to main
         elif data == 'back_main':

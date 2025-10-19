@@ -12,5 +12,7 @@ from .news_handler import NewsHandler
 from .report_handler import ReportHandler
 from .dashboard_handler import DashboardHandler
 from .ai_handler import AIHandler
+from .analytics_handler import AnalyticsHandler
+from .trading_handler import TradingHandler
 
-__all__ = ['CommandHandler', 'CallbackHandler', 'MessageHandlers', 'InlineQueryHandler', 'StocksHandler', 'CS2Handler', 'PortfolioHandler', 'ExportHandler', 'NewsHandler', 'ReportHandler', 'DashboardHandler', 'AIHandler']
+__all__ = ['CommandHandler', 'CallbackHandler', 'MessageHandlers', 'InlineQueryHandler', 'StocksHandler', 'CS2Handler', 'PortfolioHandler', 'ExportHandler', 'NewsHandler', 'ReportHandler', 'DashboardHandler', 'AIHandler', 'AnalyticsHandler', 'TradingHandler']

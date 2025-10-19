@@ -1,8 +1,8 @@
-# 🪙 CoinFlow Bot v2.6 - Ultimate Edition
+# 🪙 CoinFlow Bot v2.7 - Personal Investment Consultant
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-2.6-orange.svg)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-2.7-orange.svg)
 
-**Advanced Telegram bot for currency conversion, cryptocurrency analysis, portfolio management, and data export with professional architecture**
+**Personal Investment Consultant with AI, advanced analytics, trading signals, and portfolio optimization**
 
 [English](#english) | [Русский](#русский)
 
@@ -124,6 +124,36 @@
 - 📈 **Stock Market Integration**: Global stocks (Yahoo Finance), Russian stocks (MOEX), CBR official rates
 - 🎮 **Gaming Market**: CS2 item prices from Steam Community Market and Skinport
 - 🌍 **Universal Coverage**: Crypto + Stocks + Gaming = All-in-one analytics tool
+
+### 🆕 What's New in v2.7
+
+**📊 Advanced Analytics**
+- 📈 **Volatility Analysis**: Daily, annualized, rolling volatility metrics
+- 💎 **Sharpe Ratio**: Risk-adjusted return calculation
+- 🔗 **Correlation Analysis**: Compare asset relationships
+- 📉 **Max Drawdown**: Portfolio risk assessment
+- 📊 **Risk Metrics**: VaR, CVaR calculations
+
+**🎯 Trading Signals**
+- 📊 **RSI**: Relative Strength Index (overbought/oversold)
+- 📈 **MACD**: Moving Average Convergence Divergence
+- 📉 **Moving Averages**: SMA 20/50 with golden/death cross
+- 🎯 **Bollinger Bands**: Volatility-based signals
+- 🤖 **Overall Signal**: Aggregated BUY/SELL/NEUTRAL with confidence
+
+**🔄 Portfolio Rebalancing**
+- 📋 **Preset Strategies**: Conservative, Balanced, Aggressive, HODL, DeFi
+- 🎯 **Custom Allocation**: Set your own target percentages
+- 💰 **Cost Estimation**: Trading fees and total value
+- 📊 **Deviation Analysis**: Track portfolio drift
+- ⚡ **One-click Analysis**: Instant rebalancing recommendations
+
+**🔔 Smart Alerts**
+- 🔥 **High Volatility Detection**: Statistical anomaly alerts
+- 📈 **Momentum Shifts**: Bullish/bearish trend changes
+- 💥 **Volume Spikes**: Unusual trading activity
+- 🤖 **ML Predictions**: Short-term movement forecasts
+- 🎯 **Confidence Scores**: Reliability indicators
 
 ### 🆕 What's New in v2.6
 

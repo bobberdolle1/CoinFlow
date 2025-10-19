@@ -25,12 +25,16 @@ class PortfolioHandler:
         
         keyboard = [
             [
-                InlineKeyboardButton(get_text(user.lang, 'portfolio_add'), callback_data='portfolio_add'),
-                InlineKeyboardButton(get_text(user.lang, 'portfolio_view'), callback_data='portfolio_view')
+                InlineKeyboardButton(get_text(user.lang, 'portfolio_view'), callback_data='portfolio_view'),
+                InlineKeyboardButton(get_text(user.lang, 'portfolio_add'), callback_data='portfolio_add')
+            ],
+            [
+                InlineKeyboardButton('🔄 Rebalance', callback_data='portfolio_rebalance'),
+                InlineKeyboardButton(get_text(user.lang, 'portfolio_export'), callback_data='portfolio_export')
             ],
             [
                 InlineKeyboardButton(get_text(user.lang, 'portfolio_summary'), callback_data='portfolio_summary'),
-                InlineKeyboardButton(get_text(user.lang, 'portfolio_export'), callback_data='portfolio_export')
+                InlineKeyboardButton(get_text(user.lang, 'portfolio_chart'), callback_data='portfolio_chart')
             ],
             [InlineKeyboardButton(get_text(user.lang, 'back'), callback_data='back_main')]
         ]
@@ -442,6 +446,169 @@ class PortfolioHandler:
         except Exception as e:
             logger.error(f"Error showing portfolio chart: {e}")
             await query.edit_message_text(
-                '❌ Error generating chart',
+                "❌ Error generating chart",
+                parse_mode='Markdown'
+            )
+    
+    async def show_rebalance_menu(self, query, user):
+        """Show rebalancing options menu."""
+        await query.answer()
+        
+        keyboard = [
+            [InlineKeyboardButton(
+                "📋 Preset Strategies",
+                callback_data='rebalance_presets'
+            )],
+            [InlineKeyboardButton(
+                "🎯 Custom Allocation",
+                callback_data='rebalance_custom'
+            )],
+            [InlineKeyboardButton(
+                get_text(user.lang, 'back'),
+                callback_data='portfolio_menu'
+            )]
+        ]
+        
+        message = (
+            "🔄 **Portfolio Rebalancing**\n\n"
+            "Optimize your portfolio allocation:\n\n"
+            "📋 **Preset Strategies:**\n"
+            "• Conservative (40% BTC, 30% ETH, 30% USDT)\n"
+            "• Balanced (50% BTC, 30% ETH, 20% others)\n"
+            "• Aggressive (diversified altcoins)\n\n"
+            "🎯 **Custom Allocation:**\n"
+            "Set your own target percentages\n\n"
+            "_Bot will analyze your portfolio and suggest trades_"
+        )
+        
+        await query.edit_message_text(
+            message,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    async def show_preset_strategies(self, query, user):
+        """Show preset allocation strategies."""
+        await query.answer()
+        
+        presets = self.bot.rebalance_service.get_preset_allocations()
+        
+        keyboard = []
+        for key, preset in presets.items():
+            keyboard.append([InlineKeyboardButton(
+                f"{preset['name']}",
+                callback_data=f'rebalance_apply_{key}'
+            )])
+        
+        keyboard.append([InlineKeyboardButton(
+            get_text(user.lang, 'back'),
+            callback_data='portfolio_rebalance'
+        )])
+        
+        message = "📋 **Preset Allocation Strategies**\n\n"
+        
+        for key, preset in presets.items():
+            message += f"**{preset['name']}**\n"
+            message += f"_{preset['description']}_\n"
+            message += "Allocation:\n"
+            for symbol, pct in preset['allocation'].items():
+                message += f"• {symbol}: {pct}%\n"
+            message += "\n"
+        
+        await query.edit_message_text(
+            message,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    async def apply_rebalancing_strategy(self, query, user, strategy_name: str):
+        """Apply rebalancing strategy and show recommendations."""
+        await query.answer()
+        await query.edit_message_text(
+            f"🔄 Analyzing portfolio for {strategy_name} strategy...",
+            parse_mode='Markdown'
+        )
+        
+        try:
+            # Get preset allocation
+            presets = self.bot.rebalance_service.get_preset_allocations()
+            strategy = presets.get(strategy_name)
+            
+            if not strategy:
+                await query.edit_message_text(
+                    "❌ Strategy not found",
+                    parse_mode='Markdown'
+                )
+                return
+            
+            target_allocation = strategy['allocation']
+            
+            # Get rebalancing plan
+            result = self.bot.rebalance_service.get_rebalancing_plan(
+                user.telegram_id,
+                target_allocation
+            )
+            
+            if not result.get('success'):
+                await query.edit_message_text(
+                    f"❌ Error: {result.get('error', 'Unknown error')}",
+                    parse_mode='Markdown'
+                )
+                return
+            
+            rebalancing = result['rebalancing']
+            
+            if not rebalancing['needs_rebalancing']:
+                message = (
+                    f"✅ **Portfolio Already Balanced!**\n\n"
+                    f"Strategy: {strategy['name']}\n"
+                    f"Total Value: ${rebalancing['portfolio_value']:,.2f}\n\n"
+                    f"Your portfolio is already within target allocation.\n"
+                    f"Total deviation: {rebalancing['total_deviation']}%"
+                )
+            else:
+                message = f"🔄 **Rebalancing Plan: {strategy['name']}**\n\n"
+                message += f"💰 Portfolio Value: ${rebalancing['portfolio_value']:,.2f}\n"
+                message += f"📊 Total Deviation: {rebalancing['total_deviation']}%\n\n"
+                message += "**Recommended Actions:**\n\n"
+                
+                for rec in rebalancing['recommendations']:
+                    message += f"{rec['emoji']} **{rec['symbol']}**: {rec['action']}\n"
+                    message += f"Current: {rec['current_weight']}% → Target: {rec['target_weight']}%\n"
+                    message += f"Adjust: ${rec['value_adjustment']:,.2f}\n\n"
+                
+                # Calculate costs
+                costs = self.bot.rebalance_service.calculate_rebalancing_cost(
+                    rebalancing['recommendations']
+                )
+                
+                message += f"**Estimated Costs:**\n"
+                message += f"Trade Value: ${costs['total_trade_value']:,.2f}\n"
+                message += f"Fees (~{costs['fee_percentage']}%): ${costs['estimated_fees']:,.2f}\n\n"
+                message += "_⚠️ This is a recommendation only. Execute trades manually._"
+            
+            keyboard = [
+                [InlineKeyboardButton(
+                    "🔄 Try Another Strategy",
+                    callback_data='rebalance_presets'
+                )],
+                [InlineKeyboardButton(
+                    get_text(user.lang, 'back'),
+                    callback_data='portfolio_menu'
+                )]
+            ]
+            
+            await query.edit_message_text(
+                message,
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode='Markdown'
+            )
+            
+            logger.info(f"Rebalancing plan generated for user {user.telegram_id} with strategy {strategy_name}")
+            
+        except Exception as e:
+            logger.error(f"Error applying rebalancing strategy: {e}")
+            await query.edit_message_text(
+                "❌ Error generating rebalancing plan",
                 parse_mode='Markdown'
             )

@@ -159,6 +159,8 @@ LOCALIZATION = {
         'theme_changed': '✅ Theme changed to: {theme}',
         'dashboard_btn': '🌐 Dashboard',
         'ai_assistant': '🤖 AI Assistant',
+        'analytics': '📊 Analytics',
+        'trading_signals': '🎯 Trading Signals',
         'ai_assistant_start': '🤖 Start conversation with AI assistant',
         'ai_assistant_help': '🤖 Type "help" to see available commands',
         'ai_assistant_no_response': '🤖 No response from AI assistant',

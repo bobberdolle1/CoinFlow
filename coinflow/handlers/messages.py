@@ -193,6 +193,10 @@ class MessageHandlers:
             await self.bot.dashboard_handler.show_dashboard_menu(update, context)
         elif text == get_text(user.lang, 'ai_assistant'):
             await self.bot.ai_handler.show_ai_menu(update, context)
+        elif text == get_text(user.lang, 'analytics'):
+            await self.bot.analytics_handler.show_analytics_menu(update, context)
+        elif text == get_text(user.lang, 'trading_signals'):
+            await self.bot.trading_handler.show_signals_menu(update, context)
         elif text == get_text(user.lang, 'notifications'):
             await self.show_alerts(update, context)
         elif text == get_text(user.lang, 'favorites'):

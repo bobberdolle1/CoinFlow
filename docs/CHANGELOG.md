@@ -2,6 +2,100 @@
 
 All notable changes to CoinFlow Bot will be documented in this file.
 
+## [2.7.0] - 2025-10-19
+
+### 🎉 Personal Investment Consultant Features
+
+#### Advanced Analytics 📊
+- **AnalyticsService** (320 lines): Comprehensive financial metrics
+- **Volatility Analysis**: Daily, annualized, rolling volatility
+- **Sharpe Ratio**: Risk-adjusted return calculation
+- **Correlation Analysis**: Compare two assets
+- **Max Drawdown**: Track portfolio risk
+- **Risk Metrics**: VaR (Value at Risk), CVaR calculations
+- **AnalyticsHandler** (370 lines): Interactive analytics UI
+
+#### Trading Signals 🎯
+- **TradingSignalsService** (280 lines): Technical analysis engine
+- **RSI (14)**: Relative Strength Index with overbought/oversold signals
+- **MACD**: Moving Average Convergence Divergence with crossovers
+- **Moving Averages**: SMA 20/50 with golden/death cross detection
+- **Bollinger Bands**: Volatility-based price channels
+- **Overall Signal**: Aggregated BUY/SELL/NEUTRAL with confidence score
+- **TradingHandler** (280 lines): Signal display and explanations
+
+#### Portfolio Rebalancing 🔄
+- **RebalanceService** (290 lines): Portfolio optimization engine
+- **5 Preset Strategies**: Conservative, Balanced, Aggressive, HODL, DeFi
+- **Custom Allocation**: Set your own target percentages
+- **Deviation Analysis**: Track portfolio drift from targets
+- **Cost Estimation**: Calculate trading fees and total value
+- **Recommendations**: Specific BUY/SELL suggestions per asset
+- **Integration**: Seamless portfolio handler integration
+
+#### Smart Alerts 🔔
+- **SmartAlertsService** (310 lines): ML-based alert engine
+- **High Volatility Detection**: Statistical anomaly detection (2σ threshold)
+- **Momentum Shifts**: Bullish/bearish crossover detection
+- **Volume Spike Detection**: Unusual trading activity alerts
+- **Short-term Predictions**: 2-6 hour movement forecasts
+- **Confidence Scores**: Reliability indicators for all predictions
+- **Multi-factor Analysis**: Voting system across indicators
+
+### ✨ Enhancements
+
+#### User Interface
+- 2 new main menu buttons: "Analytics" and "Trading Signals"
+- Portfolio rebalancing menu with preset strategies
+- Interactive asset selection for analytics
+- Correlation analysis workflow (2-step selection)
+- Signal confidence indicators with emojis
+- Comprehensive alert messages
+
+#### Technical Implementation
+- 4 new services (~1,200 lines)
+- 2 new handlers (~650 lines)
+- 30+ callback handlers
+- Async processing throughout
+- Integration with existing portfolio system
+- Numpy/Pandas for calculations
+
+### 📊 Analytics Features
+- Asset-specific analytics (stocks, crypto)
+- 30-60 day historical analysis
+- Multiple risk metrics in single view
+- Export-ready data format
+
+### 🎯 Trading Features
+- 4 technical indicators
+- Majority voting for overall signal
+- Indicator-specific explanations
+- Refresh capability
+- Cross-reference with analytics
+
+### 🔄 Rebalancing Features
+- Target allocation management
+- Real-time deviation tracking
+- Trade value calculation
+- Fee estimation (0.1% default)
+- Strategy comparison
+
+### 🔔 Alert Features
+- Statistical anomaly detection
+- Pattern recognition
+- Multi-timeframe analysis
+- Configurable thresholds
+- Predictive analytics
+
+### 🛠 Technical Details
+- **Total Added**: ~1,850 lines of code
+- **Services**: AnalyticsService, TradingSignalsService, RebalanceService, SmartAlertsService
+- **Handlers**: AnalyticsHandler, TradingHandler (rebalancing in PortfolioHandler)
+- **Dependencies**: Existing numpy, pandas, matplotlib
+- **Architecture**: Modular, async, cached
+
+---
+
 ## [2.6.0] - 2025-10-19
 
 ### 🎉 AI Assistant with Local LLM
