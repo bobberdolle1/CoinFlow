@@ -191,6 +191,8 @@ class MessageHandlers:
             await self.bot.report_handler.show_report_menu(update, context)
         elif text == get_text(user.lang, 'dashboard_btn'):
             await self.bot.dashboard_handler.show_dashboard_menu(update, context)
+        elif text == get_text(user.lang, 'ai_assistant'):
+            await self.bot.ai_handler.show_ai_menu(update, context)
         elif text == get_text(user.lang, 'notifications'):
             await self.show_alerts(update, context)
         elif text == get_text(user.lang, 'favorites'):
@@ -202,26 +204,24 @@ class MessageHandlers:
         elif text == get_text(user.lang, 'settings'):
             await self.show_settings(update, context)
         elif text == get_text(user.lang, 'about_btn'):
+            await self.show_about(update, context)
+        else:
+            # Check if user is in AI conversation mode
+            temp_data = self.bot.temp_storage.get(user_id)
+            if temp_data and temp_data.get('action') == 'ai_question':
+                await self.bot.ai_handler.process_question(update, text)
+                del self.bot.temp_storage[user_id]
+                return
+            elif temp_data and temp_data.get('action') == 'ai_suggest':
+                await self.bot.ai_handler.process_suggestion_request(update, text)
+                del self.bot.temp_storage[user_id]
+                return
+            
+            # Unknown command - show help
             await update.message.reply_text(
-                get_text(user.lang, 'about_text'),
-                parse_mode='Markdown',
-                disable_web_page_preview=True
+                get_text(user.lang, 'unknown_command'),
+                parse_mode='Markdown'
             )
-        elif context.user_data.get('state') == 'calculator':
-            # Calculator mode
-            result = self.bot.calculator.calculate(text, user_id)
-            if result:
-                await update.message.reply_text(get_text(user.lang, 'calc_result', result=result))
-                self.bot.metrics.log_calculation(user_id)
-            else:
-                await update.message.reply_text(get_text(user.lang, 'error', msg='Invalid expression'))
-        elif context.user_data.get('state') == 'enter_amount':
-            # Amount entry for conversion
-            try:
-                amount = float(text.replace(',', '.'))
-                await self.bot.callback_handlers.perform_conversion(update, context, amount, user)
-            except:
-                await update.message.reply_text(get_text(user.lang, 'invalid_amount'))
     
     async def show_history(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show conversion history."""

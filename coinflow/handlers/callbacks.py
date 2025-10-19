@@ -192,6 +192,23 @@ class CallbackHandlers:
         elif data == 'dashboard_features':
             await self.bot.dashboard_handler.show_dashboard_features(query, user)
         
+        # AI Assistant callbacks
+        elif data == 'ai_menu':
+            await self.bot.ai_handler.show_ai_menu(query, context)
+        elif data == 'ai_setup':
+            await self.bot.ai_handler.show_setup_instructions(query, user)
+        elif data == 'ai_ask':
+            await self.bot.ai_handler.handle_ask_question(query, user)
+        elif data == 'ai_market':
+            await self.bot.ai_handler.handle_market_analysis(query, user)
+        elif data.startswith('ai_analyze_'):
+            asset = data.replace('ai_analyze_', '')
+            await self.bot.ai_handler.perform_market_analysis(query, user, asset)
+        elif data == 'ai_portfolio':
+            await self.bot.ai_handler.handle_portfolio_insights(query, user)
+        elif data == 'ai_suggest':
+            await self.bot.ai_handler.handle_suggestions(query, user)
+        
         # Back to main
         elif data == 'back_main':
             await query.message.reply_text(

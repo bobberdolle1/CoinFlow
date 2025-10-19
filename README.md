@@ -1,6 +1,6 @@
-# 🪙 CoinFlow Bot v2.5 - Ultimate Edition
+# 🪙 CoinFlow Bot v2.6 - Ultimate Edition
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-2.5-orange.svg)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-2.6-orange.svg)
 
 **Advanced Telegram bot for currency conversion, cryptocurrency analysis, portfolio management, and data export with professional architecture**
 
@@ -124,6 +124,34 @@
 - 📈 **Stock Market Integration**: Global stocks (Yahoo Finance), Russian stocks (MOEX), CBR official rates
 - 🎮 **Gaming Market**: CS2 item prices from Steam Community Market and Skinport
 - 🌍 **Universal Coverage**: Crypto + Stocks + Gaming = All-in-one analytics tool
+
+### 🆕 What's New in v2.6
+
+**AI Assistant 🤖**
+- 🧠 **Local LLM**: Llama 3.2 3B via Ollama
+- 🔒 **Privacy-First**: All AI processing on your machine
+- 💬 **Question Answering**: Ask about crypto, stocks, markets
+- 📊 **Market Analysis**: AI insights on prices and trends
+- 💼 **Portfolio Insights**: Personalized portfolio recommendations
+- 💡 **Smart Suggestions**: Find the right bot features
+- ⚡ **Fast Response**: 3B model for quick answers
+- 🎯 **Context-Aware**: Remembers conversation flow
+
+**Setup:**
+```bash
+# Install Ollama
+curl https://ollama.ai/install.sh | sh
+
+# Pull Llama 3.2 3B
+ollama pull llama3.2:3b
+```
+
+**Features:**
+- Ask financial questions
+- Get AI analysis of crypto markets
+- Receive portfolio insights and recommendations
+- Get suggestions for which bot features to use
+- Educational focus with financial advice disclaimers
 
 ### 🆕 What's New in v2.5
 

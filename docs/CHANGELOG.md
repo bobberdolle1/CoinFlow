@@ -2,6 +2,32 @@
 
 All notable changes to CoinFlow Bot will be documented in this file.
 
+## [2.6.0] - 2025-10-19
+
+### 🎉 AI Assistant with Local LLM
+
+**Llama 3.2 3B Integration:**
+- Privacy-first local AI via Ollama
+- Question answering about crypto/stocks/markets
+- Market analysis with AI insights
+- Portfolio analysis and recommendations
+- Smart feature suggestions
+- Fast responses from 3B parameter model
+
+**Implementation:**
+- AIService (340 lines) - Ollama API integration
+- AIHandler (450 lines) - Bot UI and conversation flow
+- Async processing with timeouts
+- Context management for conversations
+- Optional feature (graceful degradation)
+
+**Setup:**
+```bash
+ollama pull llama3.2:3b
+```
+
+---
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 

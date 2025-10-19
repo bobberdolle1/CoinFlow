@@ -24,6 +24,10 @@ class Config:
     # Web App URL
     WEBAPP_URL = os.getenv('WEBAPP_URL', 'http://localhost:8000')
     
+    # Ollama AI settings
+    OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+    OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2:3b')
+    
     # Chart settings
     CHART_DPI = int(os.getenv("CHART_DPI", "150"))
     DEFAULT_CHART_PERIOD = int(os.getenv("DEFAULT_CHART_PERIOD", "30"))

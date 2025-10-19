@@ -14,5 +14,6 @@ from .report_service import ReportService
 from .sheets_service import GoogleSheetsService
 from .notion_service import NotionService
 from .voice_service import VoiceService
+from .ai_service import AIService
 
-__all__ = ['CurrencyConverter', 'Calculator', 'ChartGenerator', 'PredictionGenerator', 'AlertManager', 'StockService', 'CS2MarketService', 'PortfolioService', 'ExportService', 'NewsService', 'ReportService', 'GoogleSheetsService', 'NotionService', 'VoiceService']
+__all__ = ['CurrencyConverter', 'Calculator', 'ChartGenerator', 'PredictionGenerator', 'AlertManager', 'StockService', 'CS2MarketService', 'PortfolioService', 'ExportService', 'NewsService', 'ReportService', 'GoogleSheetsService', 'NotionService', 'VoiceService', 'AIService']

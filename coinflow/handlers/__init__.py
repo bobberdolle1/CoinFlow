@@ -11,5 +11,6 @@ from .export_handler import ExportHandler
 from .news_handler import NewsHandler
 from .report_handler import ReportHandler
 from .dashboard_handler import DashboardHandler
+from .ai_handler import AIHandler
 
-__all__ = ['CommandHandler', 'CallbackHandler', 'MessageHandlers', 'InlineQueryHandler', 'StocksHandler', 'CS2Handler', 'PortfolioHandler', 'ExportHandler', 'NewsHandler', 'ReportHandler', 'DashboardHandler']
+__all__ = ['CommandHandler', 'CallbackHandler', 'MessageHandlers', 'InlineQueryHandler', 'StocksHandler', 'CS2Handler', 'PortfolioHandler', 'ExportHandler', 'NewsHandler', 'ReportHandler', 'DashboardHandler', 'AIHandler']

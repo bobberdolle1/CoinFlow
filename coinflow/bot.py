@@ -6,8 +6,8 @@ from telegram import InlineQueryResultArticle, InputTextMessageContent
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
 from .database import DatabaseRepository
-from .services import CurrencyConverter, Calculator, ChartGenerator, PredictionGenerator, AlertManager, StockService, CS2MarketService, PortfolioService, ExportService, NewsService, ReportService, GoogleSheetsService, NotionService, VoiceService
-from .handlers import CommandHandlers, MessageHandlers, CallbackHandlers, StocksHandler, CS2Handler, PortfolioHandler, ExportHandler, NewsHandler, ReportHandler, DashboardHandler
+from .services import CurrencyConverter, Calculator, ChartGenerator, PredictionGenerator, AlertManager, StockService, CS2MarketService, PortfolioService, ExportService, NewsService, ReportService, GoogleSheetsService, NotionService, VoiceService, AIService
+from .handlers import CommandHandlers, MessageHandlers, CallbackHandlers, StocksHandler, CS2Handler, PortfolioHandler, ExportHandler, NewsHandler, ReportHandler, DashboardHandler, AIHandler
 from .config import config
 from .utils import setup_logger, Metrics
 from .localization import get_text
@@ -43,6 +43,7 @@ class CoinFlowBot:
         self.sheets_service = GoogleSheetsService(self.db)
         self.notion_service = NotionService(self.db)
         self.voice_service = VoiceService()
+        self.ai_service = AIService(ollama_url=config.OLLAMA_URL, model=config.OLLAMA_MODEL)
         
         # Metrics
         self.metrics = Metrics()
@@ -61,6 +62,7 @@ class CoinFlowBot:
         self.news_handler = NewsHandler(self)
         self.report_handler = ReportHandler(self)
         self.dashboard_handler = DashboardHandler(self)
+        self.ai_handler = AIHandler(self)
         
         logger.info("All services initialized")
         
@@ -87,9 +89,9 @@ class CoinFlowBot:
             [get_text(lang, 'portfolio'), get_text(lang, 'export')],
             [get_text(lang, 'news'), get_text(lang, 'reports')],
             [get_text(lang, 'notifications'), get_text(lang, 'favorites')],
-            [get_text(lang, 'dashboard'), get_text(lang, 'history')],
-            [get_text(lang, 'stats_btn'), get_text(lang, 'settings')],
-            [get_text(lang, 'about_btn')]
+            [get_text(lang, 'ai_assistant'), get_text(lang, 'dashboard')],
+            [get_text(lang, 'history'), get_text(lang, 'stats_btn')],
+            [get_text(lang, 'settings'), get_text(lang, 'about_btn')]
         ], resize_keyboard=True)
     
     def get_currency_selection_keyboard(self, lang: str, selection_type: str = 'popular') -> InlineKeyboardMarkup:

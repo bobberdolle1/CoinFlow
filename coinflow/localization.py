@@ -158,6 +158,11 @@ LOCALIZATION = {
         'theme_auto': '🔄 Auto',
         'theme_changed': '✅ Theme changed to: {theme}',
         'dashboard_btn': '🌐 Dashboard',
+        'ai_assistant': '🤖 AI Assistant',
+        'ai_assistant_start': '🤖 Start conversation with AI assistant',
+        'ai_assistant_help': '🤖 Type "help" to see available commands',
+        'ai_assistant_no_response': '🤖 No response from AI assistant',
+        'ai_assistant_error': '🤖 Error occurred while processing request',
     },
     'ru': {
         'welcome_new': '👋 *Добро пожаловать в CoinFlow Bot!*\n\nВаш персональный финансовый ассистент для конвертации валют, анализа криптовалют и прогнозирования курсов.\n\n🌍 Выберите язык:',
