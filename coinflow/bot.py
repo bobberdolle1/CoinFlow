@@ -74,16 +74,22 @@ class CoinFlowBot:
         logger.info("All services initialized")
         
         # Currency lists
-        self.popular_currencies = ['USD', 'EUR', 'RUB', 'CNY', 'GBP', 'JPY', 'BTC', 'ETH', 'USDT']
+        self.popular_currencies = ['USD', 'EUR', 'RUB', 'CNY', 'GBP', 'JPY', 'BTC', 'ETH', 'USDT', 'TON', 'NOT', 'PEPE']
         self.fiat_currencies = [
             'USD', 'EUR', 'RUB', 'CNY', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'KRW',
             'INR', 'BRL', 'MXN', 'TRY', 'SEK', 'NOK', 'DKK', 'PLN', 'THB', 'IDR',
             'HUF', 'CZK', 'ILS', 'CLP', 'PHP', 'AED', 'SAR', 'MYR', 'RON', 'SGD'
         ]
         self.crypto_currencies = [
-            'BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'DOT', 'MATIC',
-            'SHIB', 'AVAX', 'TRX', 'LINK', 'UNI', 'ATOM', 'LTC', 'XLM', 'BCH', 'ALGO',
-            'VET', 'FIL', 'HBAR', 'APE', 'NEAR', 'QNT', 'AAVE', 'GRT', 'XTZ', 'SAND'
+            # Top crypto
+            'BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'ADA', 'AVAX', 'DOT', 'MATIC',
+            # Meme coins
+            'DOGE', 'SHIB', 'PEPE', 'FLOKI', 'BONK', 'WIF',
+            # Popular altcoins
+            'TON', 'NOT', 'TRX', 'LINK', 'UNI', 'ATOM', 'LTC', 'XLM', 'BCH', 'ALGO',
+            'VET', 'FIL', 'HBAR', 'APE', 'NEAR', 'QNT', 'AAVE', 'GRT', 'XTZ', 'SAND',
+            # DeFi & Layer 2
+            'ARB', 'OP', 'IMX', 'LDO', 'MKR', 'CRV'
         ]
     
     def get_main_menu_keyboard(self, lang: str) -> ReplyKeyboardMarkup:
@@ -94,9 +100,8 @@ class CoinFlowBot:
             [get_text(lang, 'compare_rates'), get_text(lang, 'calculator')],
             [get_text(lang, 'stocks'), get_text(lang, 'cs2_skins')],
             [get_text(lang, 'portfolio'), get_text(lang, 'export')],
-            [get_text(lang, 'news'), get_text(lang, 'reports')],
+            [get_text(lang, 'news'), get_text(lang, 'reports_btn')],
             [get_text(lang, 'analytics'), get_text(lang, 'trading_signals')],
-            [get_text(lang, 'ai_assistant'), get_text(lang, 'dashboard')],
             [get_text(lang, 'notifications'), get_text(lang, 'favorites')],
             [get_text(lang, 'history'), get_text(lang, 'stats_btn')],
             [get_text(lang, 'settings'), get_text(lang, 'about_btn')]
@@ -322,22 +327,39 @@ async def check_news_notifications(context, bot):
         logger.error(f"Error in news notification check: {e}")
 
 
-def setup_bot() -> Application:
-    """Setup and configure the bot application."""
+async def initialize_ai_service(bot):
+    """Initialize AI service and download model if needed."""
+    logger.info("Checking AI service availability...")
+    is_available = await bot.ai_service.check_availability(auto_pull=True)
+    
+    if is_available:
+        logger.info("✅ AI service (Qwen3-8B) is ready!")
+    else:
+        logger.warning("⚠️ AI service is not available. Bot will work without AI features.")
+        logger.warning("To enable AI: Install Ollama from https://ollama.ai")
+
+
+def setup_bot():
+    """Setup and return bot application."""
     # Create bot instance
     bot = CoinFlowBot()
     
-    # Create application
+    # Create Application
     app = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
+    
+    # Initialize AI service asynchronously
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
+    loop.run_until_complete(initialize_ai_service(bot))
     
     # Add command handlers
     app.add_handler(CommandHandler("start", bot.command_handlers.start))
-    app.add_handler(CommandHandler("help", bot.command_handlers.help_command))
-    app.add_handler(CommandHandler("stats", bot.command_handlers.stats_command))
-    app.add_handler(CommandHandler("history", bot.command_handlers.history_command))
-    app.add_handler(CommandHandler("favorites", bot.command_handlers.favorites_command))
-    app.add_handler(CommandHandler("cancel", bot.command_handlers.cancel_command))
-    app.add_handler(CommandHandler("admin", bot.command_handlers.admin_command))
+    app.add_handler(CommandHandler("admin", bot.command_handlers.admin_command))  # Hidden admin command
     
     # Add message handler
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot.message_handlers.handle_message))

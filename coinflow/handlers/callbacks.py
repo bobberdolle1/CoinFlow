@@ -114,14 +114,14 @@ class CallbackHandlers:
             context.user_data['prediction_asset'] = currency
             context.user_data['prediction_type'] = 'cbr'
             context.user_data['state'] = 'select_prediction'
-            await self.generate_prediction(query, user, currency)
+            await self.generate_prediction(query, context, user, currency)
         
         # Prediction stock ticker selection
         elif data.startswith('prediction_stock_'):
             ticker = data.replace('prediction_stock_', '')
             context.user_data['prediction_asset'] = ticker
             context.user_data['state'] = 'select_prediction'
-            await self.generate_prediction(query, user, ticker)
+            await self.generate_prediction(query, context, user, ticker)
         
         # Settings callbacks
         elif data.startswith('settings_'):
@@ -370,7 +370,7 @@ class CallbackHandlers:
             context.user_data['chart_pair'] = currency
             await self.show_period_selection(query, user, currency)
         elif state == 'select_prediction':
-            await self.generate_prediction(query, user, currency)
+            await self.generate_prediction(query, context, user, currency)
         elif state == 'select_compare':
             await self.compare_rates(query, user, currency)
     
@@ -903,10 +903,10 @@ class CallbackHandlers:
         else:
             await query.edit_message_text('❌ Chart generation failed. Please try again.', parse_mode='Markdown')
     
-    async def generate_prediction(self, query, user, pair):
+    async def generate_prediction(self, query, context, user, pair):
         """Generate prediction for asset (crypto, stock, or CBR)."""
-        context = query._bot.user_data.get(user.telegram_id, {})
-        prediction_type = context.get('prediction_type', 'crypto')
+        user_context = context.user_data
+        prediction_type = user_context.get('prediction_type', 'crypto')
         
         await query.edit_message_text(f"🔮 Generating AI forecast for **{pair}**...\n\nAnalyzing 90 days of data...", parse_mode='Markdown')
         
@@ -916,7 +916,7 @@ class CallbackHandlers:
         if prediction_type == 'cbr':
             pred_data, stats = await self.bot.prediction_generator.generate_cbr_prediction(pair, model, 90)
         elif prediction_type == 'stock':
-            stock_type = context.get('stock_type', 'global')
+            stock_type = user_context.get('stock_type', 'global')
             ticker = f"{pair}.ME" if stock_type == 'russian' and not pair.endswith('.ME') else pair
             pred_data, stats = self.bot.prediction_generator.generate_stock_prediction(ticker, model, 90)
         else:  # crypto
@@ -1114,13 +1114,16 @@ class CallbackHandlers:
         if data == 'settings_lang_en':
             # Change language to English
             self.bot.db.update_user(user.telegram_id, lang='en')
-            await query.answer('✅ Language set to English!')
-            await query.edit_message_text(
-                f"⚙️ **Settings Updated**\n\n"
-                f"🌍 Language changed to: 🇬🇧 English\n\n"
-                f"All messages will now be displayed in English.",
-                parse_mode='Markdown'
-            )
+            await query.answer('✅ Language set: English!')
+            try:
+                await query.edit_message_text(
+                    f"⚙️ **Settings Updated**\n\n"
+                    f"🌍 Language changed to: 🇬🇧 English\n\n"
+                    f"All messages will now be displayed in English.",
+                    parse_mode='Markdown'
+                )
+            except telegram.error.BadRequest:
+                pass  # Message not modified
             # Show main menu in new language
             await query.message.reply_text(
                 get_text('en', 'main_menu'),
@@ -1132,12 +1135,15 @@ class CallbackHandlers:
             # Change language to Russian
             self.bot.db.update_user(user.telegram_id, lang='ru')
             await query.answer('✅ Язык установлен: Русский!')
-            await query.edit_message_text(
-                f"⚙️ **Настройки обновлены**\n\n"
-                f"🌍 Язык изменён на: 🇷🇺 Русский\n\n"
-                f"Все сообщения теперь будут отображаться на русском языке.",
-                parse_mode='Markdown'
-            )
+            try:
+                await query.edit_message_text(
+                    f"⚙️ **Настройки обновлены**\n\n"
+                    f"🌍 Язык изменён на: 🇷🇺 Русский\n\n"
+                    f"Все сообщения теперь будут отображаться на русском языке.",
+                    parse_mode='Markdown'
+                )
+            except telegram.error.BadRequest:
+                pass  # Message not modified
             # Show main menu in new language
             await query.message.reply_text(
                 get_text('ru', 'main_menu'),

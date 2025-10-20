@@ -14,16 +14,15 @@ from ..utils.logger import setup_logger
 import warnings
 warnings.filterwarnings('ignore')
 
-# Try to import Prophet
+logger = setup_logger('prediction')
+
+# Try to import Prophet (optional, not currently used)
 try:
     from prophet import Prophet
     PROPHET_AVAILABLE = True
 except ImportError:
     PROPHET_AVAILABLE = False
-    logger = setup_logger('prediction')
-    logger.warning("Prophet not installed. Install with: pip install prophet")
-
-logger = setup_logger('prediction')
+    # Prophet is optional - we use ARIMA and Linear Regression
 
 
 class PredictionGenerator:

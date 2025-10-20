@@ -1,15 +1,20 @@
 """Notion integration service for CoinFlow bot."""
 
+from __future__ import annotations
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, TYPE_CHECKING
 from ..utils.logger import setup_logger
 
 logger = setup_logger('notion_service')
+
+if TYPE_CHECKING:
+    from notion_client import Client
 
 try:
     from notion_client import Client
     NOTION_AVAILABLE = True
 except ImportError:
+    Client = None  # type: ignore
     NOTION_AVAILABLE = False
     logger.warning("Notion client not available. Install with: pip install notion-client")
 

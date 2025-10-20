@@ -1,33 +1,60 @@
-# CoinFlow Bot Dockerfile
-FROM python:3.11-slim
+# CoinFlow Bot v3.0 - Optimized Multi-Stage Build
+# Python 3.12 with all dependencies
+FROM python:3.12 AS builder
+
+# Install system build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN pip install --no-cache-dir poetry==1.8.0
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Poetry
-RUN pip install poetry
-
-# Copy dependency files
+# Copy only dependency files first (for better caching)
 COPY pyproject.toml poetry.lock ./
 
-# Install dependencies (without installing the project itself yet)
+# Configure Poetry and install dependencies
 RUN poetry config virtualenvs.create false \
-    && poetry install --only main --no-root --no-interaction --no-ansi
+    && poetry install --all-extras --no-root --no-interaction --no-ansi --compile
+
+# Final stage - runtime
+FROM python:3.12
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY . .
 
-# Create data directory for database
-RUN mkdir -p /app/data
+# Create data and logs directories
+RUN mkdir -p /app/data /app/logs
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV DATABASE_URL=sqlite:///data/coinflow.db
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    DATABASE_URL=sqlite:///data/coinflow.db \
+    LOG_FILE=/app/logs/coinflow.log \
+    PATH="/usr/local/bin:${PATH}"
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import sys; sys.exit(0)"
 
 # Run the bot
-CMD ["python", "main.py"]
+CMD ["python", "-u", "main.py"]

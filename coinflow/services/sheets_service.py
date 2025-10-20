@@ -1,11 +1,15 @@
 """Google Sheets integration service for CoinFlow bot."""
 
+from __future__ import annotations
 import json
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, TYPE_CHECKING
 from ..utils.logger import setup_logger
 
 logger = setup_logger('sheets_service')
+
+if TYPE_CHECKING:
+    from google.oauth2.credentials import Credentials
 
 try:
     from google.oauth2.credentials import Credentials
@@ -14,6 +18,7 @@ try:
     from googleapiclient.errors import HttpError
     GOOGLE_AVAILABLE = True
 except ImportError:
+    Credentials = None  # type: ignore
     GOOGLE_AVAILABLE = False
     logger.warning("Google API libraries not available. Install with: pip install google-auth google-auth-oauthlib google-api-python-client")
 

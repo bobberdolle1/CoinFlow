@@ -13,27 +13,107 @@ echo ""
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
     echo "[ERROR] Docker is not installed"
-    echo "Please install Docker: https://docs.docker.com/get-docker/"
+
+# Check Docker
+echo "[CHECK] Docker status..."
+if ! docker info >/dev/null 2>&1; then
+    echo -e "${RED}[ERROR]${NC} Docker is not running!"
+    echo ""
+    echo "Please start Docker and try again."
+    echo ""
     exit 1
 fi
+echo -e "${GREEN}[OK]${NC} Docker is running"
+echo ""
 
-# Check if docker-compose is installed
-if ! command -v docker-compose &> /dev/null; then
-    echo "[ERROR] docker-compose is not installed"
-    echo "Please install docker-compose: https://docs.docker.com/compose/install/"
-    exit 1
-fi
-
-# Check if .env file exists
-if [ ! -f ".env" ]; then
-    echo "[WARNING] .env file not found!"
-    echo "Creating .env from .env.example..."
+# Check .env
+echo "[CHECK] Configuration..."
+if [ ! -f .env ]; then
+    echo -e "${YELLOW}[WARN]${NC} .env file not found - creating from template"
     cp .env.example .env
     echo ""
-    echo "[ACTION REQUIRED] Please edit .env and add your TELEGRAM_BOT_TOKEN"
+    echo "[ACTION REQUIRED] Edit .env file:"
+    echo "  1. Add your TELEGRAM_BOT_TOKEN"
+    echo "  2. Add your ADMIN_IDS"
+    echo ""
     echo "Then run this script again."
+    echo ""
     exit 1
 fi
+
+if grep -q "YOUR_TELEGRAM_BOT_TOKEN_HERE" .env; then
+    echo -e "${RED}[ERROR]${NC} TELEGRAM_BOT_TOKEN not configured!"
+    echo ""
+    echo "Please edit .env file and add your bot token."
+    echo ""
+    exit 1
+fi
+echo -e "${GREEN}[OK]${NC} Configuration found"
+echo ""
+
+# Create directories
+echo "[SETUP] Creating directories..."
+mkdir -p data logs
+echo -e "${GREEN}[OK]${NC} Directories ready"
+echo ""
+
+# Check Ollama
+echo "[CHECK] Ollama connection..."
+if ! curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
+    echo -e "${YELLOW}[WARN]${NC} Ollama not detected on localhost:11434"
+    echo ""
+    echo "Make sure Ollama is running with qwen3:8b model"
+    echo ""
+    read -p "Continue anyway? (y/n): " continue
+    if [ "$continue" != "y" ] && [ "$continue" != "Y" ]; then
+        exit 1
+    fi
+else
+    echo -e "${GREEN}[OK]${NC} Ollama is accessible"
+fi
+echo ""
+
+# Build
+echo "[BUILD] Building Docker image (this may take 5-10 minutes)..."
+echo ""
+if ! docker-compose build; then
+    echo ""
+    echo -e "${RED}[ERROR]${NC} Build failed!"
+    echo ""
+    echo "Try: docker-compose build --no-cache"
+    echo ""
+    exit 1
+fi
+
+echo ""
+echo -e "${GREEN}[OK]${NC} Build complete"
+echo ""
+
+# Start
+echo "[START] Starting CoinFlow Bot..."
+if ! docker-compose up -d; then
+    echo ""
+    echo -e "${RED}[ERROR]${NC} Start failed!"
+    echo ""
+    exit 1
+fi
+
+echo ""
+echo "========================================"
+echo "  CoinFlow Bot v3.0 is RUNNING!"
+echo "========================================"
+echo ""
+echo "Useful commands:"
+echo "  docker-compose logs -f    - View logs"
+echo "  docker-compose restart    - Restart bot"
+echo "  docker-compose down       - Stop bot"
+echo "  docker-compose ps         - Check status"
+echo ""
+echo "Logs location: ./logs/coinflow.log"
+echo "Database: ./data/coinflow.db"
+echo ""
+
+sleep 3
 
 # Function to display menu
 show_menu() {

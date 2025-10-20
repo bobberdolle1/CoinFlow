@@ -1,6 +1,6 @@
-# 🪙 CoinFlow Bot v2.7 - Personal Investment Consultant
+# 🪙 CoinFlow Bot v3.0 - AI-Powered Investment Consultant
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-2.7-orange.svg)
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-3.0-orange.svg) ![AI](https://img.shields.io/badge/AI-Qwen3--8B-purple.svg)
 
 **Personal Investment Consultant with AI, advanced analytics, trading signals, and portfolio optimization**
 
@@ -12,14 +12,17 @@
 
 ## 🇬🇧 English
 
-**CoinFlow** is your ultimate Telegram-based financial assistant that combines:
+**CoinFlow** is your ultimate Telegram-based financial assistant powered by **Qwen3-8B AI** that combines:
 - 💱 Advanced multi-source currency converter (60+ currencies)
-- 📊 Real-time cryptocurrency analysis from 5+ exchanges
+- 🪙 **50+ cryptocurrencies** including TON, NOT, PEPE, FLOKI, BONK, WIF, ARB, OP
+- 📊 Real-time crypto analysis from 5+ exchanges (Binance, Bybit, HTX, KuCoin, Gate.io)
+- 🇨🇳 **Enhanced fiat conversion** via USDT bridge (RUB → USDT → CNY)
 - 📈 Global & Russian stock market analytics (35+ stocks)
 - 🎮 CS2 item price comparison across marketplaces
 - 💼 **Portfolio management** with real-time valuation (crypto/stocks/fiat/CS2)
 - 📊 **Portfolio visualization** with interactive pie charts
 - 📤 **Data export** to CSV & ZIP (portfolio, alerts, history)
+- 🤖 **AI Assistant** with Qwen3-8B via Ollama (local, privacy-first)
 - 🔮 AI-powered price forecasting (ARIMA & Linear Regression)
 - 📈 Interactive charts with Dark/Light themes
 - 🧮 Built-in calculator with currency conversion support
@@ -57,8 +60,13 @@
 
 #### 💱 **Advanced Currency Conversion**
 - **60+ Currencies:** 30+ fiat currencies (USD, EUR, RUB, CNY, GBP, JPY, etc.)
-- **30+ Cryptocurrencies:** BTC, ETH, BNB, SOL, ADA, DOGE, DOT, MATIC, and more
+- **50+ Cryptocurrencies:** 
+  - Top crypto: BTC, ETH, USDT, BNB, SOL, XRP, ADA, AVAX
+  - Meme coins: DOGE, SHIB, PEPE, FLOKI, BONK, WIF
+  - Popular altcoins: TON, NOT, TRX, LINK, UNI, ATOM, LTC
+  - DeFi & Layer 2: ARB, OP, IMX, LDO, MKR, CRV
 - **Multi-Source Aggregation:** Data from 5+ exchanges for maximum accuracy
+- **Smart Fiat Routing:** RUB → USDT → CNY conversion via crypto bridge
 - **Automatic Fallback:** If one source fails, seamlessly switches to the next
 
 #### 📊 **Real-Time Market Data**
@@ -163,33 +171,47 @@
 - 🔒 **Access Control**: Admin-only access via ADMIN_IDS
 - 📈 **Detailed Metrics**: Activity tracking (24h/7d/30d), language distribution
 
-### 🆕 What's New in v2.6
+### 🆕 What's New in v3.0
 
-**AI Assistant 🤖**
-- 🧠 **Local LLM**: Llama 3.2 3B via Ollama
-- 🔒 **Privacy-First**: All AI processing on your machine
-- 💬 **Question Answering**: Ask about crypto, stocks, markets
-- 📊 **Market Analysis**: AI insights on prices and trends
-- 💼 **Portfolio Insights**: Personalized portfolio recommendations
-- 💡 **Smart Suggestions**: Find the right bot features
-- ⚡ **Fast Response**: 3B model for quick answers
-- 🎯 **Context-Aware**: Remembers conversation flow
+**Enhanced Crypto Coverage 🪙**
+- 🎉 **50+ Cryptocurrencies**: Added TON, NOT, PEPE, FLOKI, BONK, WIF, ARB, OP, IMX, LDO, MKR, CRV
+- 🐸 **Meme Coin Support**: Full integration for PEPE, BONK, WIF, FLOKI
+- 🔗 **Layer 2 Tokens**: Arbitrum (ARB), Optimism (OP), Immutable X (IMX)
+- 📱 **Telegram Ecosystem**: TON (Telegram Open Network), NOT (Notcoin)
 
-**Setup:**
+**Smart Fiat Conversion 💱**
+- 🇨🇳 **CNY Support Restored**: RUB → USDT → CNY via crypto bridge
+- 🌍 **Universal Routing**: Any fiat pair via USD/USDT intermediary
+- ⚡ **Automatic Path Finding**: Smart conversion through best available route
+
+**AI Upgrade 🤖**
+- 🧠 **Qwen3-8B Integration**: Upgraded from Llama 3.2 3B for better multilingual support
+- 🇷🇺 **Enhanced Russian**: Improved understanding of Russian financial queries
+- 💬 **Natural Language**: Supports voice messages and text commands
+- 🔒 **Privacy-First**: All AI processing runs locally via Ollama
+- 🎯 **Context-Aware**: Better conversation flow and memory
+
+**Technical Improvements 🛠️**
+- 🐍 **Python 3.12**: Updated from 3.11 for better performance
+- 🐳 **Optimized Docker**: Multi-stage build, smaller images, faster startup
+- 📦 **Latest Dependencies**: All packages updated to newest stable versions
+- 🔧 **Improved Error Handling**: Better BadRequest handling for Telegram API
+
+**Setup Qwen3-8B:**
 ```bash
 # Install Ollama
 curl https://ollama.ai/install.sh | sh
 
-# Pull Llama 3.2 3B
-ollama pull llama3.2:3b
+# Pull Qwen3-8B
+ollama pull qwen3:8b
 ```
 
-**Features:**
-- Ask financial questions
-- Get AI analysis of crypto markets
-- Receive portfolio insights and recommendations
-- Get suggestions for which bot features to use
-- Educational focus with financial advice disclaimers
+**AI Features:**
+- Natural language currency conversion
+- Market analysis and insights
+- Portfolio recommendations
+- Voice message support
+- Multilingual (EN/RU) understanding
 
 ### 🆕 What's New in v2.5
 
@@ -370,24 +392,29 @@ ollama pull llama3.2:3b
 ### 🛠️ Tech Stack
 
 **Core:**
-- Python 3.11+
-- `python-telegram-bot` ^22.5 (async API)
-- `sqlalchemy` ^2.0 (ORM for database)
-- `aiohttp` ^3.9 (async HTTP client)
+- Python 3.12+
+- `python-telegram-bot` (latest, async API)
+- `sqlalchemy` (latest, ORM for database)
+- `aiohttp` (latest, async HTTP client)
 
 **Data & Analytics:**
-- `yfinance` ^0.2 (market data)
-- `matplotlib` ^3.9 (charts)
-- `statsmodels` ^0.14 (ARIMA)
-- `scikit-learn` ^1.5 (ML)
-- `numpy` ^2.0 (computations)
+- `yfinance` (latest, market data)
+- `matplotlib` (latest, charts)
+- `statsmodels` (latest, ARIMA)
+- `scikit-learn` (latest, ML)
+- `numpy` (latest, computations)
+- `plotly` (latest, interactive charts)
 
 **Infrastructure:**
-- `apscheduler` ^3.10 (background tasks)
-- `python-dotenv` ^1.0 (config)
-- `bestchange-api` ^3.1 (exchange rates)
-- `requests` ^2.32 (HTTP)
+- `apscheduler` (latest, background tasks)
+- `python-dotenv` (latest, config)
+- `bestchange-api` (latest, exchange rates)
+- `requests` (latest, HTTP)
 - Docker & docker-compose
+
+**AI:**
+- Ollama (local LLM runtime)
+- Qwen3-8B model (via Ollama)
 
 **Dependency Management:** Poetry
 
@@ -448,9 +475,10 @@ Complete guides for deployment and troubleshooting:
 > 📦 **New to setup?** Check our [Complete Installation Guide](./docs/INSTALLATION.md) for step-by-step instructions including Python, Poetry, and Docker installation from scratch!
 
 #### **Prerequisites**
-- Python 3.11 or higher
+- Python 3.12 or higher
 - Poetry (Python dependency manager)
 - Telegram Bot Token from [@BotFather](https://t.me/BotFather)
+- Ollama with Qwen3-8B model (optional, for AI features)
 
 #### **Quick Start**
 
@@ -481,9 +509,9 @@ Complete guides for deployment and troubleshooting:
    # Optional: Add your Telegram ID for admin access
    ADMIN_IDS=YOUR_TELEGRAM_ID_HERE
    
-   # Optional: Ollama AI settings (for AI Assistant)
+   # Optional: Ollama AI settings (for AI Assistant with Qwen3-8B)
    OLLAMA_URL=http://localhost:11434
-   OLLAMA_MODEL=llama3.2:3b
+   OLLAMA_MODEL=qwen3:8b
    ```
 
 4. **Install dependencies:**

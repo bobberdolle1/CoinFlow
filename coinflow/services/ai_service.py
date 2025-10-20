@@ -1,7 +1,9 @@
-"""AI Assistant service using local Llama model via Ollama."""
+"""AI Assistant service using Qwen3-8B model via Ollama for intelligent bot control."""
 
 import asyncio
-from typing import Optional, List, Dict
+import json
+import re
+from typing import Optional, List, Dict, Tuple, Any
 import aiohttp
 from ..utils.logger import setup_logger
 
@@ -9,26 +11,30 @@ logger = setup_logger('ai_service')
 
 
 class AIService:
-    """Service for AI assistant powered by Llama 3.2 3B."""
+    """Service for AI assistant powered by Qwen3-8B with bot command interpretation."""
     
-    def __init__(self, ollama_url: str = "http://localhost:11434", model: str = "llama3.2:3b"):
+    def __init__(self, ollama_url: str = "http://localhost:11434", model: str = "qwen3:8b"):
         """
-        Initialize AI service.
+        Initialize AI service with Qwen3-8B.
         
         Args:
             ollama_url: Ollama API endpoint
-            model: Model name (default: llama3.2:3b)
+            model: Model name (default: qwen3:8b)
         """
         self.ollama_url = ollama_url
         self.model = model
         self.available = False
-        self.context_limit = 4096  # Token limit
+        self.context_limit = 8192  # Qwen3-8B has larger context
+        self.conversation_history = {}  # Store conversation per user
         
-        logger.info(f"AI Service initialized with model: {model}")
+        logger.info(f"AI Service initialized with Qwen3-8B model: {model}")
     
-    async def check_availability(self) -> bool:
+    async def check_availability(self, auto_pull: bool = True) -> bool:
         """
-        Check if Ollama service is available.
+        Check if Ollama service is available and optionally pull model.
+        
+        Args:
+            auto_pull: Automatically pull model if not found
         
         Returns:
             True if available, False otherwise
@@ -44,17 +50,33 @@ class AIService:
                         
                         # If model not found, try to pull it
                         if self.model not in model_names:
-                            logger.info(f"Model {self.model} not found, attempting to pull...")
-                            pulled = await self._pull_model()
-                            self.available = pulled
+                            if auto_pull:
+                                logger.warning(f"Model {self.model} not found locally. Starting automatic download...")
+                                logger.warning(f"This may take 5-10 minutes for first-time setup. Please wait...")
+                                pulled = await self._pull_model()
+                                self.available = pulled
+                                if pulled:
+                                    logger.info(f"✅ Model {self.model} downloaded and ready!")
+                                else:
+                                    logger.error(f"❌ Failed to download model {self.model}. Please run: ollama pull {self.model}")
+                            else:
+                                logger.warning(f"Model {self.model} not found. Run: ollama pull {self.model}")
+                                self.available = False
                         else:
-                            logger.info(f"Model {self.model} is available")
+                            logger.info(f"✅ Model {self.model} is available")
                             self.available = True
                         
                         return self.available
-                    return False
+                    else:
+                        logger.error(f"Ollama API returned status {response.status}")
+                        return False
+        except aiohttp.ClientConnectorError:
+            logger.error(f"Cannot connect to Ollama at {self.ollama_url}. Is Ollama running?")
+            logger.error(f"Install Ollama from https://ollama.ai and start the service.")
+            self.available = False
+            return False
         except Exception as e:
-            logger.error(f"Ollama not available: {e}")
+            logger.error(f"Error checking Ollama availability: {e}")
             self.available = False
             return False
     
@@ -66,24 +88,42 @@ class AIService:
             True if successful, False otherwise
         """
         try:
-            logger.info(f"Pulling model {self.model}... This may take a few minutes.")
+            logger.info(f"📥 Downloading {self.model} model...")
+            logger.info(f"⏳ This will take 5-10 minutes (model size ~5GB). Please be patient...")
+            
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     f"{self.ollama_url}/api/pull",
                     json={'name': self.model},
-                    timeout=aiohttp.ClientTimeout(total=600)  # 10 minutes for download
+                    timeout=aiohttp.ClientTimeout(total=900)  # 15 minutes for download
                 ) as response:
                     if response.status == 200:
-                        # Read stream to completion
+                        # Show progress by reading stream
+                        last_status = None
                         async for line in response.content:
-                            pass  # Just consume the stream
-                        logger.info(f"Model {self.model} pulled successfully")
+                            try:
+                                # Try to parse progress info
+                                import json
+                                data = json.loads(line.decode('utf-8'))
+                                status = data.get('status', '')
+                                if status and status != last_status:
+                                    logger.info(f"📦 {status}")
+                                    last_status = status
+                            except:
+                                pass
+                        
+                        logger.info(f"✅ Model {self.model} downloaded successfully!")
                         return True
                     else:
-                        logger.error(f"Failed to pull model: {response.status}")
+                        error_text = await response.text()
+                        logger.error(f"❌ Failed to pull model (HTTP {response.status}): {error_text}")
                         return False
+        except asyncio.TimeoutError:
+            logger.error(f"❌ Model download timeout. Please check your internet connection.")
+            return False
         except Exception as e:
-            logger.error(f"Error pulling model: {e}")
+            logger.error(f"❌ Error pulling model: {e}")
+            logger.error(f"💡 Try manually: ollama pull {self.model}")
             return False
     
     async def generate(self, prompt: str, system_prompt: Optional[str] = None, 
@@ -297,13 +337,184 @@ Assets breakdown:
         else:
             return "AI analysis unavailable."
     
-    async def answer_question(self, question: str, context: str = None) -> str:
+    async def interpret_user_message(self, message: str, user_lang: str = 'en') -> Dict[str, Any]:
+        """
+        Interpret user message and extract command or provide text response.
+        
+        Args:
+            message: User's message
+            user_lang: User's language (en/ru)
+        
+        Returns:
+            Dict with 'type' ('command' or 'text'), 'action', 'params', and 'response'
+        """
+        system_prompt = (
+            "You are an intelligent assistant for CoinFlow Bot. Your job is to interpret user requests and either:\n"
+            "1. Extract a bot command if user wants to use a feature (forecast, chart, convert, compare, etc.)\n"
+            "2. Provide a helpful text response if they're asking a general question\n\n"
+            "Available bot commands:\n"
+            "- FORECAST <symbol>: Show AI price forecast for cryptocurrency (e.g., BTC, ETH)\n"
+            "- CHART <symbol> <days>: Show price chart (days: 7, 30, 90, 365)\n"
+            "- CONVERT <amount> <from> <to>: Convert currency\n"
+            "- COMPARE <symbol>: Compare prices across exchanges\n"
+            "- STATS: Show user statistics\n"
+            "- NEWS: Show crypto news\n"
+            "- HELP: Show help information\n\n"
+            "If user wants to use a feature, respond with JSON: {\"command\": \"FORECAST\", \"symbol\": \"BTC\"}\n"
+            "If user asks a question, respond normally without JSON.\n\n"
+            "Be concise and helpful. Language: " + ('Russian' if user_lang == 'ru' else 'English')
+        )
+        
+        result = await self.generate(message, system_prompt=system_prompt, temperature=0.3, max_tokens=300)
+        
+        if not result.get('success'):
+            return {'type': 'error', 'response': 'AI service unavailable'}
+        
+        response_text = result['text']
+        
+        # Try to parse JSON command
+        command = self._extract_command(response_text)
+        
+        if command:
+            return {
+                'type': 'command',
+                'action': command.get('command', '').upper(),
+                'params': command,
+                'response': None
+            }
+        else:
+            return {
+                'type': 'text',
+                'action': None,
+                'params': None,
+                'response': response_text
+            }
+    
+    def _extract_command(self, text: str) -> Optional[Dict]:
+        """
+        Extract JSON command from AI response.
+        
+        Args:
+            text: AI response text
+        
+        Returns:
+            Parsed command dict or None
+        """
+        try:
+            # Try to find JSON in response
+            json_match = re.search(r'\{[^}]+\}', text)
+            if json_match:
+                command = json.loads(json_match.group())
+                if 'command' in command:
+                    return command
+        except:
+            pass
+        
+        # Fallback: pattern matching for common requests
+        text_lower = text.lower()
+        
+        # Forecast patterns
+        if any(word in text_lower for word in ['forecast', 'прогноз', 'prediction', 'predict']):
+            symbols = re.findall(r'\b(BTC|ETH|BNB|SOL|XRP|ADA|DOGE|MATIC|DOT|AVAX)\b', text.upper())
+            if symbols:
+                return {'command': 'FORECAST', 'symbol': symbols[0]}
+        
+        # Chart patterns
+        if any(word in text_lower for word in ['chart', 'график', 'graph']):
+            symbols = re.findall(r'\b(BTC|ETH|BNB|SOL|XRP|ADA|DOGE|MATIC|DOT|AVAX|CNY|USD|EUR|RUB)\b', text.upper())
+            days_match = re.search(r'(\d+)\s*(day|days|дней|день)', text_lower)
+            days = int(days_match.group(1)) if days_match else 30
+            if symbols:
+                return {'command': 'CHART', 'symbol': symbols[0], 'days': days}
+        
+        # Compare patterns
+        if any(word in text_lower for word in ['compare', 'сравни', 'comparison']):
+            symbols = re.findall(r'\b(BTC|ETH|BNB|SOL|XRP|ADA|DOGE)\b', text.upper())
+            if symbols:
+                return {'command': 'COMPARE', 'symbol': symbols[0]}
+        
+        # Convert patterns
+        convert_match = re.search(r'(\d+\.?\d*)\s*([A-Z]{3})\s*(?:to|в|in)\s*([A-Z]{3})', text.upper())
+        if convert_match:
+            return {
+                'command': 'CONVERT',
+                'amount': float(convert_match.group(1)),
+                'from': convert_match.group(2),
+                'to': convert_match.group(3)
+            }
+        
+        return None
+    
+    async def explain_forecast(self, symbol: str, forecast_data: Dict, model_type: str = 'ARIMA', 
+                               user_lang: str = 'en') -> str:
+        """
+        Explain ARIMA/LinReg forecast in simple terms using Qwen3-8B.
+        
+        Args:
+            symbol: Cryptocurrency symbol
+            forecast_data: Forecast statistics from prediction service
+            model_type: 'ARIMA' or 'LINEAR'
+            user_lang: User language
+        
+        Returns:
+            AI explanation text
+        """
+        system_prompt = (
+            "You are a financial education assistant. Explain cryptocurrency price forecasts in simple, "
+            "easy-to-understand language. Your audience may not know technical analysis. "
+            f"Language: {'Russian' if user_lang == 'ru' else 'English'}. "
+            "Keep explanations to 3-4 sentences. Always end with a disclaimer."
+        )
+        
+        current = forecast_data.get('current', 0)
+        predicted = forecast_data.get('predicted', 0)
+        change = forecast_data.get('change', 0)
+        trend = forecast_data.get('trend', 'Unknown')
+        confidence = forecast_data.get('confidence', 'medium')
+        days_analyzed = forecast_data.get('days_analyzed', 90)
+        
+        model_description = (
+            "ARIMA (AutoRegressive Integrated Moving Average) - a statistical model that identifies patterns in time series"
+            if model_type == 'ARIMA' else
+            "Linear Regression - a mathematical model that finds trends in historical data"
+        )
+        
+        prompt = f"""Explain this {symbol} price forecast:
+
+Model: {model_type} ({model_description})
+Current Price: ${current:,.2f}
+7-Day Forecast: ${predicted:,.2f}
+Expected Change: {change:+.2f}%
+Trend: {trend}
+Confidence: {confidence}
+Data analyzed: {days_analyzed} days of historical prices
+
+Explain:
+1. Why the model predicts this trend (in simple terms)
+2. What this means for {symbol}
+3. Key disclaimer
+
+Keep it brief and educational."""
+        
+        result = await self.generate(prompt, system_prompt=system_prompt, temperature=0.6, max_tokens=250)
+        
+        if result.get('success'):
+            return result['text']
+        else:
+            return (
+                f"The {model_type} model analyzed {days_analyzed} days of {symbol} price history and "
+                f"predicts a {change:+.2f}% change over the next 7 days. This is based on statistical patterns, "
+                f"not financial advice."
+            )
+    
+    async def answer_question(self, question: str, context: str = None, user_lang: str = 'en') -> str:
         """
         Answer user's question about finance/crypto.
         
         Args:
             question: User's question
             context: Optional context
+            user_lang: User language
         
         Returns:
             AI answer
@@ -311,7 +522,8 @@ Assets breakdown:
         system_prompt = (
             "You are a helpful financial assistant for CoinFlow Bot. "
             "Answer questions about cryptocurrencies, stocks, and financial markets. "
-            "Be concise, accurate, and friendly. Always remind users that this is educational, not financial advice."
+            "Be concise, accurate, and friendly. Always remind users that this is educational, not financial advice. "
+            f"Language: {'Russian' if user_lang == 'ru' else 'English'}."
         )
         
         prompt = question

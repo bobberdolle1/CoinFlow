@@ -18,8 +18,15 @@ class CurrencyConverter:
         self.exchange_rate_api = "https://api.exchangerate-api.com/v4/latest"
         self.cbr_api_url = "https://www.cbr-xml-daily.ru/daily_json.js"
         self.crypto_symbols = [
-            'BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'DOT', 'MATIC', 
-            'SHIB', 'AVAX', 'TRX', 'LINK', 'UNI', 'ATOM', 'LTC', 'XLM', 'BCH', 'ALGO'
+            # Top crypto
+            'BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'ADA', 'AVAX', 'DOT', 'MATIC',
+            # Meme coins
+            'DOGE', 'SHIB', 'PEPE', 'FLOKI', 'BONK', 'WIF',
+            # Popular altcoins
+            'TON', 'NOT', 'TRX', 'LINK', 'UNI', 'ATOM', 'LTC', 'XLM', 'BCH', 'ALGO',
+            'VET', 'FIL', 'HBAR', 'APE', 'NEAR', 'QNT', 'AAVE', 'GRT', 'XTZ', 'SAND',
+            # DeFi & Layer 2
+            'ARB', 'OP', 'IMX', 'LDO', 'MKR', 'CRV'
         ]
         self.crypto_providers = [
             {'name': 'BestChange', 'method': self.get_bestchange_rate},
@@ -35,6 +42,7 @@ class CurrencyConverter:
             'USDT': 115,
             'ETH': 139,
             'RUB': 643,
+            'CNY': 155,
         }
         
         # Cache system
@@ -240,17 +248,31 @@ class CurrencyConverter:
 
         rate = None
         if is_from_crypto and not is_to_crypto:
+            # Crypto → Fiat (e.g. BTC → USD)
             rate_crypto_usd = self.get_crypto_rate_aggregated(from_currency, 'USDT', user_id)
             rate_usd_fiat = self.get_fiat_rate('USD', to_currency)
             rate = rate_crypto_usd * rate_usd_fiat if rate_crypto_usd and rate_usd_fiat else None
         elif not is_from_crypto and is_to_crypto:
+            # Fiat → Crypto (e.g. USD → BTC)
             rate_fiat_usd = self.get_fiat_rate(from_currency, 'USD')
             rate_crypto_usd = self.get_crypto_rate_aggregated(to_currency, 'USDT', user_id)
             rate = (rate_fiat_usd / rate_crypto_usd) if rate_fiat_usd and rate_crypto_usd else None
         elif is_from_crypto and is_to_crypto:
+            # Crypto → Crypto (e.g. BTC → ETH)
             rate = self.get_crypto_rate_aggregated(from_currency, to_currency, user_id)
         else:
+            # Fiat → Fiat - try direct first, then via USDT
             rate = self.get_fiat_rate(from_currency, to_currency)
+            
+            # If direct conversion failed, try via USDT (e.g. RUB → USDT → CNY)
+            if not rate and from_currency != 'USD' and to_currency != 'USD':
+                rate_from_usd = self.get_fiat_rate(from_currency, 'USD')
+                rate_from_usdt = self.get_crypto_rate_aggregated('USDT', 'USDT', user_id) or 1.0  # USDT ≈ USD
+                rate_usd_to = self.get_fiat_rate('USD', to_currency)
+                
+                if rate_from_usd and rate_usd_to:
+                    rate = rate_from_usd * rate_usd_to
+                    logger.info(f"Converted {from_currency} → {to_currency} via USD: {rate}")
         
         if rate:
             self.cache.set(cache_key, rate)

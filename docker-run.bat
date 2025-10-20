@@ -1,75 +1,126 @@
 @echo off
-REM CoinFlow Bot - Docker Runner for Windows
-REM This script helps you run CoinFlow bot using Docker
+REM CoinFlow Bot v3.0 - Docker Quick Start for Windows
+REM Author: bobberdolle1
 
+setlocal EnableDelayedExpansion
+
+echo.
 echo ========================================
-echo   CoinFlow Bot v2.0 - Docker Runner
+echo   CoinFlow Bot v3.0 - Docker Launcher
 echo ========================================
 echo.
 
-REM Check if Docker is installed
-docker --version >nul 2>&1
+REM Check Docker
+echo [CHECK] Docker status...
+docker info >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] Docker is not installed or not in PATH
-    echo Please install Docker Desktop: https://www.docker.com/products/docker-desktop
-    pause
-    exit /b 1
-)
-
-REM Check if .env file exists
-if not exist ".env" (
-    echo [WARNING] .env file not found!
-    echo Creating .env from .env.example...
-    copy .env.example .env
+    echo [ERROR] Docker is not running!
     echo.
-    echo [ACTION REQUIRED] Please edit .env and add your TELEGRAM_BOT_TOKEN
+    echo Please start Docker Desktop and try again.
+    echo.
+    pause
+    exit /b 1
+)
+echo [OK] Docker is running
+echo.
+
+REM Check .env
+echo [CHECK] Configuration...
+if not exist .env (
+    echo [WARN] .env file not found - creating from template
+    copy .env.example .env >nul
+    echo.
+    echo [ACTION REQUIRED] Edit .env file:
+    echo   1. Add your TELEGRAM_BOT_TOKEN
+    echo   2. Add your ADMIN_IDS
+    echo.
     echo Then run this script again.
+    echo.
     pause
     exit /b 1
 )
 
-echo What would you like to do?
+findstr /C:"YOUR_TELEGRAM_BOT_TOKEN_HERE" .env >nul
+if not errorlevel 1 (
+    echo [ERROR] TELEGRAM_BOT_TOKEN not configured!
+    echo.
+    echo Please edit .env file and add your bot token.
+    echo.
+    pause
+    exit /b 1
+)
+echo [OK] Configuration found
 echo.
-echo 1. Build and start the bot
-echo 2. Stop the bot
-echo 3. View logs
-echo 4. Restart the bot
-echo 5. Remove containers and images
-echo 6. Exit
+
+REM Create directories
+echo [SETUP] Creating directories...
+if not exist data mkdir data
+if not exist logs mkdir logs
+echo [OK] Directories ready
 echo.
-set /p choice="Enter your choice (1-6): "
 
-if "%choice%"=="1" goto build
-if "%choice%"=="2" goto stop
-if "%choice%"=="3" goto logs
-if "%choice%"=="4" goto restart
-if "%choice%"=="5" goto clean
-if "%choice%"=="6" goto end
-
-echo Invalid choice!
-pause
-exit /b 1
-
-:build
-echo.
-echo Building and starting CoinFlow bot...
-docker-compose up -d --build
+REM Check Ollama
+echo [CHECK] Ollama connection...
+curl -s http://localhost:11434/api/tags >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] Failed to start the bot
+    echo [WARN] Ollama not detected on localhost:11434
+    echo.
+    echo Make sure Ollama is running with qwen3:8b model
+    echo.
+    set /p "continue=Continue anyway? (y/n): "
+    if /i "!continue!" neq "y" exit /b 1
+)
+echo [OK] Ollama is accessible
+echo.
+
+REM Build
+echo [BUILD] Building Docker image (this may take 5-10 minutes)...
+echo.
+docker-compose build
+
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Build failed!
+    echo.
+    echo Try: docker-compose build --no-cache
+    echo.
     pause
     exit /b 1
 )
-echo.
-echo [SUCCESS] Bot is now running!
-echo Use 'docker-compose logs -f' to view logs
-goto end
 
-:stop
 echo.
-echo Stopping CoinFlow bot...
-docker-compose down
-echo [SUCCESS] Bot stopped
-goto end
+echo [OK] Build complete
+echo.
+
+REM Start
+echo [START] Starting CoinFlow Bot...
+docker-compose up -d
+
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Start failed!
+    echo.
+    pause
+    exit /b 1
+)
+
+echo.
+echo ========================================
+echo   CoinFlow Bot v3.0 is RUNNING!
+echo ========================================
+echo.
+echo Useful commands:
+echo   docker-compose logs -f    - View logs
+echo   docker-compose restart    - Restart bot
+echo   docker-compose down       - Stop bot
+echo   docker-compose ps         - Check status
+echo.
+echo Logs location: .\logs\coinflow.log
+echo Database: .\data\coinflow.db
+echo.
+
+timeout /t 5
+exit /b 0
 
 :logs
 echo.

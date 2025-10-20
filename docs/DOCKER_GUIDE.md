@@ -1,401 +1,400 @@
-# 🐳 Docker Deployment Guide
+# 🐳 CoinFlow Bot - Docker Deployment Guide
 
-Complete guide for deploying CoinFlow Bot using Docker.
-
-[English](#english) | [Русский](#русский)
+Complete guide for deploying CoinFlow Bot v3.0 with Qwen3-8B using Docker.
 
 ---
 
-<a name="english"></a>
+## 📋 Prerequisites
 
-## 🇬🇧 English
+- **Docker** 20.10+
+- **Docker Compose** 2.0+
+- **16 GB RAM** minimum (32 GB recommended)
+- **20 GB** free disk space
 
-### 📋 Table of Contents
-
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Using Helper Scripts](#using-helper-scripts)
-- [Manual Docker Commands](#manual-docker-commands)
-- [Configuration](#configuration)
-- [Troubleshooting](#troubleshooting)
-
----
-
-## 🔧 Prerequisites
-
-### 1. Install Docker
+### Install Docker
 
 **Windows:**
-- Download [Docker Desktop](https://www.docker.com/products/docker-desktop)
-- Run installer and follow instructions
-- Restart your computer if required
-
-**Mac:**
-- Download [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop)
-- Install and start Docker Desktop
+- Download Docker Desktop: https://www.docker.com/products/docker-desktop
 
 **Linux:**
 ```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install docker.io docker-compose
-
-# Start Docker service
-sudo systemctl start docker
-sudo systemctl enable docker
-
-# Add your user to docker group (to run without sudo)
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
 sudo usermod -aG docker $USER
-# Log out and back in for this to take effect
 ```
 
-### 2. Get Bot Token
-
-1. Open Telegram and find [@BotFather](https://t.me/BotFather)
-2. Send `/newbot` command
-3. Follow instructions to create your bot
-4. Copy the token (e.g., `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
+**macOS:**
+- Download Docker Desktop: https://www.docker.com/products/docker-desktop
 
 ---
 
-## ⚡ Quick Start
+## 🚀 Quick Start (Automated)
 
-### Method 1: Using Helper Scripts (Recommended)
-
-**Windows:**
-```cmd
-# Double-click docker-run.bat or run in CMD:
-docker-run.bat
-```
-
-**Linux/Mac:**
+### Linux/macOS:
 ```bash
 # Make script executable
-chmod +x docker-run.sh
+chmod +x docker-init.sh
 
-# Run script
-./docker-run.sh
+# Run setup
+./docker-init.sh
 ```
 
-The script will:
-1. Check if Docker is installed
-2. Create `.env` file from `.env.example` if needed
-3. Show menu with options to build, start, stop, view logs, etc.
+### Windows (PowerShell):
+```powershell
+# Use docker-run.bat or manual steps below
+.\docker-run.bat
+```
 
-### Method 2: Using docker-compose
+---
+
+## 📝 Manual Setup
+
+### 1. Configure Environment
 
 ```bash
-# 1. Create .env file
+# Copy example config
 cp .env.example .env
 
-# 2. Edit .env and add your token
+# Edit .env and set your bot token
 nano .env  # or use any text editor
+```
 
-# 3. Build and start
+**Required settings in `.env`:**
+```bash
+TELEGRAM_BOT_TOKEN=your_token_here
+ADMIN_IDS=your_telegram_id
+```
+
+### 2. Create Directories
+
+```bash
+mkdir -p data logs
+```
+
+### 3. Build and Start
+
+```bash
+# Build images
+docker-compose build
+
+# Start services
 docker-compose up -d
+```
 
-# 4. View logs
+### 4. Download Qwen3-8B Model
+
+```bash
+# Wait for Ollama to be ready (20-30 seconds)
+sleep 30
+
+# Pull the model (5-10 minutes)
+docker exec coinflow-ollama ollama pull qwen3:8b
+```
+
+### 5. Verify
+
+```bash
+# Check logs
+docker-compose logs -f coinflow-bot
+
+# Should see:
+# ✅ Model qwen3:8b is available
+# ✅ AI service (Qwen3-8B) is ready!
+# 🤖 CoinFlow Bot v2.7 is running...
+```
+
+---
+
+## 📊 Service Management
+
+### View Logs
+```bash
+# All services
 docker-compose logs -f
 
-# 5. Stop
-docker-compose down
+# Only bot
+docker-compose logs -f coinflow-bot
+
+# Only Ollama
+docker-compose logs -f ollama
 ```
 
----
-
-## 🎮 Using Helper Scripts
-
-### Windows (docker-run.bat)
-
-**Option 1: Build and Start**
-- Builds Docker image
-- Creates and starts container
-- Bot runs in background
-
-**Option 2: Stop**
-- Stops the running bot
-- Removes containers
-
-**Option 3: View Logs**
-- Shows real-time logs
-- Press Ctrl+C to exit
-
-**Option 4: Restart**
-- Restarts the bot without rebuilding
-
-**Option 5: Clean**
-- Removes containers, images, and volumes
-- Use when you want to start fresh
-
-### Linux/Mac (docker-run.sh)
-
-Same options as Windows, but with bash script.
-
+### Stop Services
 ```bash
-# First time setup
-chmod +x docker-run.sh
-./docker-run.sh
-
-# Select option 1 to build and start
-# Select option 3 to view logs
+docker-compose stop
 ```
 
----
-
-## 🔨 Manual Docker Commands
-
-### Build Image
-
+### Restart Services
 ```bash
-# Build with tag
-docker build -t coinflow:latest .
-
-# Build with no cache (fresh build)
-docker build --no-cache -t coinflow:latest .
-```
-
-### Run Container
-
-```bash
-# Run in detached mode
-docker run -d \
-  --name coinflow-bot \
-  --env-file .env \
-  --restart unless-stopped \
-  coinflow:latest
-
-# Run with interactive logs
-docker run -it --env-file .env coinflow:latest
-```
-
-### Manage Container
-
-```bash
-# View logs
-docker logs coinflow-bot
-docker logs -f coinflow-bot  # follow logs
-
-# Stop container
-docker stop coinflow-bot
-
-# Start stopped container
-docker start coinflow-bot
-
-# Restart container
-docker restart coinflow-bot
-
-# Remove container
-docker rm coinflow-bot
-
-# Remove image
-docker rmi coinflow:latest
-```
-
-### Docker Compose Commands
-
-```bash
-# Build and start
-docker-compose up -d --build
-
-# Start (without building)
-docker-compose up -d
-
-# Stop
-docker-compose down
-
-# View logs
-docker-compose logs
-docker-compose logs -f  # follow logs
-docker-compose logs -f --tail=100  # last 100 lines
-
-# Restart
 docker-compose restart
-
-# Rebuild specific service
-docker-compose build coinflow
-
-# Remove everything (containers, volumes, images)
-docker-compose down --rmi all --volumes
 ```
 
----
-
-## ⚙️ Configuration
-
-### Environment Variables (.env)
-
-Required:
-```env
-TELEGRAM_BOT_TOKEN='your_token_here'
-```
-
-Optional:
-```env
-# Database
-DATABASE_URL='sqlite:///coinflow.db'
-
-# Cache
-CACHE_TTL_SECONDS=60
-
-# Alerts
-ALERT_CHECK_INTERVAL=5
-
-# Charts
-CHART_DPI=150
-DEFAULT_CHART_PERIOD=30
-
-# Logging
-LOG_LEVEL=INFO
-LOG_FILE=coinflow.log
-```
-
-### Docker Compose Configuration
-
-Edit `docker-compose.yml` to customize:
-
-```yaml
-version: '3.8'
-
-services:
-  coinflow:
-    build: .
-    container_name: coinflow-bot
-    env_file: .env
-    restart: unless-stopped
-    volumes:
-      - ./data:/app/data  # Persistent data
-      - ./logs:/app/logs  # Logs
-```
-
-**Restart Policies:**
-- `no`: Never restart (default)
-- `always`: Always restart
-- `unless-stopped`: Restart unless manually stopped
-- `on-failure`: Restart only on failure
-
----
-
-## 🔍 Troubleshooting
-
-### Container Won't Start
-
+### Stop and Remove
 ```bash
-# Check container status
-docker ps -a
-
-# View container logs
-docker logs coinflow-bot
-
-# Check if port is already in use
-docker port coinflow-bot
-```
-
-### Permission Errors (Linux)
-
-```bash
-# Add user to docker group
-sudo usermod -aG docker $USER
-
-# Log out and back in, or run:
-newgrp docker
-```
-
-### Image Build Fails
-
-```bash
-# Clean build cache
-docker builder prune
-
-# Build with no cache
-docker-compose build --no-cache
-```
-
-### Bot Database Issues
-
-```bash
-# Stop container
 docker-compose down
 
-# Remove volumes (this deletes data!)
-docker-compose down --volumes
-
-# Start fresh
-docker-compose up -d
+# Remove volumes too (deletes data)
+docker-compose down -v
 ```
 
-### View Container Details
-
-```bash
-# Inspect container
-docker inspect coinflow-bot
-
-# Check resource usage
-docker stats coinflow-bot
-
-# Access container shell
-docker exec -it coinflow-bot /bin/bash
-```
-
-### Update Bot
-
+### Update
 ```bash
 # Pull latest code
-git pull origin main
+git pull
 
-# Rebuild and restart
-docker-compose up -d --build
+# Rebuild
+docker-compose build
 
-# Or with helper script
-./docker-run.sh  # select option 1
+# Restart
+docker-compose up -d
 ```
 
 ---
 
-## 📊 Monitoring
+## 🔧 Architecture
 
-### View Logs in Real-Time
+```
+┌─────────────────────────────────────┐
+│     Docker Compose Stack            │
+├─────────────────────────────────────┤
+│                                     │
+│  ┌──────────────────────────────┐  │
+│  │  Ollama Container            │  │
+│  │  - Qwen3-8B Model            │  │
+│  │  - Port: 11434               │  │
+│  │  - GPU Support (optional)    │  │
+│  └──────────────────────────────┘  │
+│               ▲                     │
+│               │ HTTP API            │
+│               │                     │
+│  ┌──────────────────────────────┐  │
+│  │  CoinFlow Bot Container      │  │
+│  │  - Python 3.11               │  │
+│  │  - Telegram Bot              │  │
+│  │  - AI Service                │  │
+│  │  - All Features              │  │
+│  └──────────────────────────────┘  │
+│                                     │
+└─────────────────────────────────────┘
+         │
+         ▼
+   Host Volumes:
+   - ./data (database)
+   - ./logs (logs)
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Ollama not starting
+
+**Check logs:**
+```bash
+docker-compose logs ollama
+```
+
+**Restart Ollama:**
+```bash
+docker-compose restart ollama
+```
+
+### Model not downloading
+
+**Check Ollama is running:**
+```bash
+docker exec coinflow-ollama ollama list
+```
+
+**Manually pull:**
+```bash
+docker exec coinflow-ollama ollama pull qwen3:8b
+```
+
+### Bot can't connect to Ollama
+
+**Check network:**
+```bash
+docker exec coinflow-bot ping ollama
+```
+
+**Check Ollama URL in logs:**
+```bash
+docker-compose logs coinflow-bot | grep OLLAMA
+```
+
+### Out of memory
+
+**Check Docker resources:**
+```bash
+docker stats
+```
+
+**Increase Docker memory:**
+- Docker Desktop → Settings → Resources → Memory
+- Set to at least 16 GB
+
+**Or use smaller model:**
+```bash
+# In .env
+OLLAMA_MODEL=qwen3:3b
+```
+
+### Permission errors
 
 ```bash
-# All logs
-docker-compose logs -f
+# Fix data directory permissions
+sudo chown -R $USER:$USER data logs
 
-# Last 100 lines
-docker-compose logs -f --tail=100
-
-# Grep for errors
-docker-compose logs | grep ERROR
+# Or run with sudo
+sudo docker-compose up -d
 ```
 
-### Check Container Health
+---
+
+## 🎮 GPU Support (Optional)
+
+For faster AI responses with NVIDIA GPU:
+
+### 1. Install NVIDIA Container Toolkit
+
+**Linux:**
+```bash
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+sudo systemctl restart docker
+```
+
+### 2. Update docker-compose.yml
+
+Add to `ollama` service:
+```yaml
+ollama:
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+```
+
+### 3. Restart
 
 ```bash
-# Container status
-docker ps
+docker-compose down
+docker-compose up -d
+```
 
-# Resource usage
-docker stats coinflow-bot
+### 4. Verify GPU
 
-# Container processes
-docker top coinflow-bot
+```bash
+docker exec coinflow-ollama nvidia-smi
 ```
 
 ---
 
-## 🚀 Production Tips
+## 📈 Performance
 
-1. **Use restart policy**: Set to `unless-stopped` in docker-compose.yml
-2. **Mount volumes**: Keep data persistent across restarts
-3. **Monitor logs**: Set up log rotation or use logging service
-4. **Backup data**: Regularly backup `./data` directory
-5. **Update regularly**: Pull updates and rebuild image
-6. **Security**: Never commit `.env` file to git
+| Configuration | Response Time |
+|--------------|---------------|
+| CPU only (4 cores, 16GB RAM) | 15-30 sec |
+| CPU (8 cores, 32GB RAM) | 5-15 sec |
+| GPU (NVIDIA 8GB VRAM) | 2-5 sec |
 
 ---
 
-## 📚 Additional Resources
+## 🔒 Security
 
-- [Docker Documentation](https://docs.docker.com/)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [CoinFlow GitHub](https://github.com/bobberdolle1/CoinFlow)
-- [Troubleshooting Guide](./TROUBLESHOOTING.md)
-- [Deployment Guide](./DEPLOYMENT.md)
+**Firewall:**
+```bash
+# Only expose Telegram bot port if needed
+# Ollama port (11434) is NOT exposed to internet by default
+```
+
+**Environment variables:**
+```bash
+# Never commit .env to Git
+# .env is already in .gitignore
+```
+
+**Updates:**
+```bash
+# Regularly update base images
+docker-compose pull
+docker-compose up -d
+```
+
+---
+
+## 📦 Backup
+
+### Backup Data
+```bash
+# Backup database and logs
+tar -czf coinflow-backup-$(date +%Y%m%d).tar.gz data logs .env
+
+# Backup Ollama models (optional, can be re-downloaded)
+docker run --rm -v coinflow_ollama-data:/data -v $(pwd):/backup alpine tar -czf /backup/ollama-models.tar.gz -C /data .
+```
+
+### Restore
+```bash
+# Restore data
+tar -xzf coinflow-backup-YYYYMMDD.tar.gz
+
+# Restart services
+docker-compose restart
+```
+
+---
+
+## 🆘 Support
+
+**Logs location:**
+- Bot logs: `./logs/coinflow.log`
+- Docker logs: `docker-compose logs`
+
+**Common commands:**
+```bash
+# Check container status
+docker-compose ps
+
+# Check resource usage
+docker stats
+
+# Enter container shell
+docker exec -it coinflow-bot bash
+
+# Check Ollama models
+docker exec coinflow-ollama ollama list
+
+# Test Ollama API
+docker exec coinflow-bot curl http://ollama:11434/api/tags
+```
+
+---
+
+## ✅ Production Checklist
+
+- [ ] Docker and Docker Compose installed
+- [ ] `.env` configured with bot token
+- [ ] Firewall configured (block 11434 from internet)
+- [ ] 16+ GB RAM available
+- [ ] 20+ GB disk space
+- [ ] Qwen3-8B model downloaded
+- [ ] Bot starts without errors
+- [ ] Telegram commands work
+- [ ] AI responses work
+- [ ] Voice messages work (if enabled)
+- [ ] Backups configured
+
+---
+
+**Version:** 3.0.0  
+**Last updated:** 2025-10-20  
+**Author:** bobberdolle1
