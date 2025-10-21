@@ -6,13 +6,20 @@ services:
     env_file:
       - .env
     volumes:
+      # Persistent database storage
       - ./data:/app/data
+      # Log files
       - ./logs:/app/logs
     environment:
+      # Database configuration
       - DATABASE_URL=sqlite:///data/coinflow.db
       - LOG_FILE=/app/logs/coinflow.log
+      # AI service (Ollama) - connect to host machine
       - OLLAMA_URL=http://host.docker.internal:11434
       - OLLAMA_MODEL=qwen3:8b
+      # Faster-Whisper CPU optimization
+      - OMP_NUM_THREADS=4
+      - MKL_NUM_THREADS=4
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:

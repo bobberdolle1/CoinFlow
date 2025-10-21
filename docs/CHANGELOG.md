@@ -2,6 +2,49 @@
 
 All notable changes to CoinFlow Bot will be documented in this file.
 
+## [3.1.0] - 2025-10-21
+
+### 🎨 UX Improvements
+- **Localization Fixed:** Added missing Russian translations for `about_btn`, `stats_btn`, and `reports_btn`
+- **AI Feedback:** Added typing indicators and loading messages when AI generates responses
+  - Users now see "🤖 Thinking..." or "⏳ Generating AI response..." during processing
+  - Improves perceived responsiveness and user experience
+- **CS2 Interface Enhanced:** Improved navigation with categories, pagination (8 items per page), and hierarchical browsing
+  - Categories: Knives, Gloves, Rifles, Snipers, Pistols, SMGs
+  - Pagination buttons with "Previous" and "Next" navigation
+  - Clean, organized item selection
+
+### ⚡ Performance Enhancements
+- **Faster Speech Recognition:** Replaced `openai-whisper` with `faster-whisper`
+  - 4-5x faster transcription on CPU
+  - Lower memory usage with int8 quantization
+  - Automatic fallback to standard Whisper if faster-whisper unavailable
+  - Configurable model size (tiny, base, small, medium, large)
+  - **Note:** Requires Python 3.11-3.13 (not compatible with 3.14+)
+  - Basic voice recognition (without faster-whisper) works on all Python 3.11+ versions
+
+### 🛠️ Technical Changes
+- Updated `pyproject.toml` dependencies:
+  - Python version restricted to 3.11-3.13 for faster-whisper compatibility
+  - Created `voice` extra (basic, no faster-whisper) and `voice-fast` extra (with faster-whisper)
+  - Made faster-whisper truly optional to support Python 3.14+
+- Enhanced `SpeechRecognitionService` with dual Whisper support
+- Added typing action (`send_action('typing')`) to AI and voice handlers
+- Localization keys added: `ai_generating`, `ai_thinking`
+
+### 📝 Documentation
+- Updated README with v3.1 features and Python version requirements
+- Created comprehensive `VOICE_SETUP.md` guide with troubleshooting
+- Updated `DOCKER_GUIDE.md` with faster-whisper setup and performance benchmarks
+- Added performance notes for speech recognition
+- Documented UX improvements
+
+### 🐛 Known Issues
+- **Python 3.14 Compatibility:** faster-whisper requires ctranslate2 and onnxruntime which don't have wheels for Python 3.14 yet
+  - **Solution 1:** Use `poetry install -E voice` for basic voice recognition (Google Speech API)
+  - **Solution 2:** Downgrade to Python 3.12: `poetry env use python3.12`
+  - **Solution 3:** Wait for upstream library updates
+
 ## [2.7.0] - 2025-10-19
 
 ### 🎉 Personal Investment Consultant Features

@@ -34,6 +34,9 @@ class MessageHandlers:
             return
         
         try:
+            # Show typing action to indicate processing
+            await update.message.chat.send_action('typing')
+            
             # Show processing message
             processing_msg = await update.message.reply_text(
                 get_text(user.lang, 'voice_processing')
@@ -74,9 +77,12 @@ class MessageHandlers:
             # Get recognized text
             recognized_text = result.get('text', '')
             
+            # Show typing action for AI processing
+            await update.message.chat.send_action('typing')
+            
             # Show recognized text
             await processing_msg.edit_text(
-                f"🎤 **Распознано:** _{recognized_text}_\n\n🤖 AI обрабатывает...",
+                f"{get_text(user.lang, 'voice_recognized', text=recognized_text)}\n\n{get_text(user.lang, 'ai_generating')}",
                 parse_mode='Markdown'
             )
             

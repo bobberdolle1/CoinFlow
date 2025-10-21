@@ -1,8 +1,10 @@
-# CoinFlow Bot v3.0 - Optimized Multi-Stage Build
-# Python 3.12 with all dependencies
+# CoinFlow Bot v3.1 - Optimized Multi-Stage Build
+# Python 3.12 with all dependencies including faster-whisper
 FROM python:3.12 AS builder
 
 # Install system build dependencies
+# gcc/g++: Required for building Python packages with C extensions
+# make/cmake: Build tools for native dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
@@ -27,6 +29,8 @@ RUN poetry config virtualenvs.create false \
 FROM python:3.12
 
 # Install runtime dependencies
+# curl: Health checks and API calls
+# ffmpeg: Required for voice message processing (faster-whisper, pydub)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ffmpeg \
@@ -50,7 +54,10 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     DATABASE_URL=sqlite:///data/coinflow.db \
     LOG_FILE=/app/logs/coinflow.log \
-    PATH="/usr/local/bin:${PATH}"
+    PATH="/usr/local/bin:${PATH}" \
+    # Faster-Whisper optimization for CPU
+    OMP_NUM_THREADS=4 \
+    MKL_NUM_THREADS=4
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

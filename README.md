@@ -392,7 +392,8 @@ ollama pull qwen3:8b
 ### 🛠️ Tech Stack
 
 **Core:**
-- Python 3.12+
+- Python 3.11, 3.12, or 3.13 (for faster-whisper support)
+- Python 3.11+ (for basic voice recognition)
 - `python-telegram-bot` (latest, async API)
 - `sqlalchemy` (latest, ORM for database)
 - `aiohttp` (latest, async HTTP client)

@@ -13,24 +13,35 @@ logger = setup_logger('speech_service')
 class SpeechRecognitionService:
     """Service for converting voice messages to text."""
     
-    def __init__(self, use_whisper: bool = True):
+    def __init__(self, use_whisper: bool = True, model_size: str = "base"):
         """
         Initialize speech recognition service.
         
         Args:
             use_whisper: Use Whisper model if True, otherwise use SpeechRecognition
+            model_size: Whisper model size (tiny, base, small, medium, large)
         """
         self.use_whisper = use_whisper
         self.whisper_model = None
         
         if use_whisper:
             try:
-                import whisper
-                self.whisper_model = whisper.load_model("base")
-                logger.info("Whisper model loaded successfully")
+                # Try faster-whisper first (more efficient)
+                from faster_whisper import WhisperModel
+                # Use CPU with int8 for better performance on systems without GPU
+                self.whisper_model = WhisperModel(model_size, device="cpu", compute_type="int8")
+                self.use_faster_whisper = True
+                logger.info(f"Faster-Whisper model '{model_size}' loaded successfully")
             except ImportError:
-                logger.warning("Whisper not available, falling back to SpeechRecognition")
-                self.use_whisper = False
+                try:
+                    # Fallback to standard whisper
+                    import whisper
+                    self.whisper_model = whisper.load_model(model_size)
+                    self.use_faster_whisper = False
+                    logger.info(f"Standard Whisper model '{model_size}' loaded successfully")
+                except ImportError:
+                    logger.warning("Whisper not available, falling back to SpeechRecognition")
+                    self.use_whisper = False
         
         if not self.use_whisper:
             try:
@@ -65,23 +76,34 @@ class SpeechRecognitionService:
             return None
     
     async def _transcribe_with_whisper(self, voice_file_path: str, language: str) -> Optional[str]:
-        """Transcribe using Whisper model."""
+        """Transcribe using Whisper model (Faster-Whisper or standard)."""
         try:
             # Convert OGG to WAV if needed
             wav_path = await self._convert_to_wav(voice_file_path)
             
             # Transcribe with Whisper
             loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
-                None,
-                lambda: self.whisper_model.transcribe(wav_path, language=language)
-            )
+            
+            if hasattr(self, 'use_faster_whisper') and self.use_faster_whisper:
+                # Faster-Whisper API
+                def transcribe_faster():
+                    segments, info = self.whisper_model.transcribe(wav_path, language=language)
+                    text = " ".join([segment.text for segment in segments])
+                    return text.strip()
+                
+                text = await loop.run_in_executor(None, transcribe_faster)
+            else:
+                # Standard Whisper API
+                result = await loop.run_in_executor(
+                    None,
+                    lambda: self.whisper_model.transcribe(wav_path, language=language)
+                )
+                text = result.get('text', '').strip()
             
             # Clean up temp file
             if wav_path != voice_file_path:
                 os.remove(wav_path)
             
-            text = result.get('text', '').strip()
             logger.info(f"Whisper transcription: {text[:50]}...")
             return text if text else None
             

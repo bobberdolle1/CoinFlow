@@ -160,10 +160,14 @@ class AIHandler:
     async def process_question(self, update: Update, question: str):
         """Process user question."""
         user_id = update.effective_user.id
+        user = self.bot.db.get_user(user_id)
+        
+        # Show typing action
+        await update.message.chat.send_action('typing')
         
         # Show processing message
         processing_msg = await update.message.reply_text(
-            "🤖 Thinking...",
+            get_text(user.lang, 'ai_thinking'),
             parse_mode='Markdown'
         )
         
@@ -214,8 +218,12 @@ class AIHandler:
     async def perform_market_analysis(self, query, user, asset: str):
         """Perform AI market analysis."""
         await query.answer()
+        
+        # Show typing action
+        await query.message.chat.send_action('typing')
+        
         await query.edit_message_text(
-            f"🤖 Analyzing {asset}...",
+            get_text(user.lang, 'ai_generating'),
             parse_mode='Markdown'
         )
         
@@ -257,8 +265,12 @@ class AIHandler:
     async def handle_portfolio_insights(self, query, user):
         """Provide AI insights on user's portfolio."""
         await query.answer()
+        
+        # Show typing action
+        await query.message.chat.send_action('typing')
+        
         await query.edit_message_text(
-            "🤖 Analyzing your portfolio...",
+            get_text(user.lang, 'ai_generating'),
             parse_mode='Markdown'
         )
         
@@ -356,8 +368,12 @@ class AIHandler:
     async def process_suggestion_request(self, update: Update, user_intent: str):
         """Process suggestion request."""
         user_id = update.effective_user.id
+        user = self.bot.db.get_user(user_id)
         
-        processing_msg = await update.message.reply_text("🤖 Finding the best features for you...")
+        # Show typing action
+        await update.message.chat.send_action('typing')
+        
+        processing_msg = await update.message.reply_text(get_text(user.lang, 'ai_generating'))
         
         try:
             bot_features = [

@@ -18,6 +18,7 @@ LOCALIZATION = {
         'settings': '⚙️ Settings',
         'about_btn': 'ℹ️ About',
         'stats_btn': '📊 Statistics',
+        'reports_btn': '📊 Reports',
         'back': '◀️ Back',
         'previous': 'Previous',
         'next': 'Next',
@@ -180,6 +181,8 @@ LOCALIZATION = {
         'ai_assistant_help': '🤖 Type "help" to see available commands',
         'ai_assistant_no_response': '🤖 No response from AI assistant',
         'ai_assistant_error': '🤖 Error occurred while processing request',
+        'ai_generating': '⏳ Generating AI response...',
+        'ai_thinking': '🤖 Thinking...',
         
         # Common error messages
         'not_enough_data': '❌ Not enough data',
@@ -226,6 +229,9 @@ LOCALIZATION = {
         'favorites': '⭐ Избранное',
         'history': '📜 История',
         'settings': '⚙️ Настройки',
+        'about_btn': 'ℹ️ О боте',
+        'stats_btn': '📊 Статистика',
+        'reports_btn': '📊 Отчеты',
         'select_conversion_type': '💱 *Быстрая конвертация*\n\nВыберите тип валюты:',
         'fiat_currencies': '💵 Фиатные валюты',
         'popular_pairs': '⭐ Популярные пары',
@@ -377,6 +383,8 @@ LOCALIZATION = {
         'ai_assistant_help': '🤖 Напишите "help" чтобы увидеть доступные команды',
         'ai_assistant_no_response': '🤖 Нет ответа от AI ассистента',
         'ai_assistant_error': '🤖 Произошла ошибка при обработке запроса',
+        'ai_generating': '⏳ Генерирую ответ AI...',
+        'ai_thinking': '🤖 Думаю...',
         
         # Common error messages
         'not_enough_data': '❌ Недостаточно данных',
