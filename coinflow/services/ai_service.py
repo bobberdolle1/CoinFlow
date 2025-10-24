@@ -1,8 +1,9 @@
-"""AI Assistant service using Qwen3-8B model via Ollama for intelligent bot control."""
+"""AI Assistant service using Qwen3 cloud models via Ollama for intelligent bot control."""
 
 import asyncio
 import json
 import re
+import base64
 from typing import Optional, List, Dict, Tuple, Any
 import aiohttp
 from ..utils.logger import setup_logger
@@ -11,60 +12,68 @@ logger = setup_logger('ai_service')
 
 
 class AIService:
-    """Service for AI assistant powered by Qwen3-8B with bot command interpretation."""
+    """Service for AI assistant powered by Qwen3 cloud models with bot command interpretation."""
     
-    def __init__(self, ollama_url: str = "http://localhost:11434", model: str = "qwen3:8b"):
+    def __init__(self, ollama_url: str = "http://localhost:11434", 
+                 text_model: str = "qwen3-coder:480b-cloud",
+                 vision_model: str = "qwen3-vl:235b-cloud"):
         """
-        Initialize AI service with Qwen3-8B.
+        Initialize AI service with Qwen3 cloud models.
         
         Args:
             ollama_url: Ollama API endpoint
-            model: Model name (default: qwen3:8b)
+            text_model: Text model name (default: qwen3-coder:480b-cloud)
+            vision_model: Vision model name (default: qwen3-vl:235b-cloud)
         """
         self.ollama_url = ollama_url
-        self.model = model
+        self.text_model = text_model
+        self.vision_model = vision_model
         self.available = False
-        self.context_limit = 8192  # Qwen3-8B has larger context
+        self.vision_available = False
+        self.context_limit = 32768  # Cloud models have larger context
         self.conversation_history = {}  # Store conversation per user
         
-        logger.info(f"AI Service initialized with Qwen3-8B model: {model}")
+        logger.info(f"AI Service initialized with cloud models:")
+        logger.info(f"  - Text: {text_model}")
+        logger.info(f"  - Vision: {vision_model}")
     
-    async def check_availability(self, auto_pull: bool = True) -> bool:
+    async def check_availability(self, auto_pull: bool = False) -> bool:
         """
-        Check if Ollama service is available and optionally pull model.
+        Check if Ollama service is available with cloud models.
         
         Args:
-            auto_pull: Automatically pull model if not found
+            auto_pull: Automatically pull model if not found (not recommended for cloud models)
         
         Returns:
             True if available, False otherwise
         """
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.ollama_url}/api/tags", timeout=aiohttp.ClientTimeout(total=5)) as response:
+                async with session.get(f"{self.ollama_url}/api/tags", timeout=aiohttp.ClientTimeout(total=10)) as response:
                     if response.status == 200:
-                        # Check if model is available
+                        # Check if models are available
                         data = await response.json()
                         models = data.get('models', [])
                         model_names = [m.get('name', '') for m in models]
                         
-                        # If model not found, try to pull it
-                        if self.model not in model_names:
-                            if auto_pull:
-                                logger.warning(f"Model {self.model} not found locally. Starting automatic download...")
-                                logger.warning(f"This may take 5-10 minutes for first-time setup. Please wait...")
-                                pulled = await self._pull_model()
-                                self.available = pulled
-                                if pulled:
-                                    logger.info(f"✅ Model {self.model} downloaded and ready!")
-                                else:
-                                    logger.error(f"❌ Failed to download model {self.model}. Please run: ollama pull {self.model}")
-                            else:
-                                logger.warning(f"Model {self.model} not found. Run: ollama pull {self.model}")
-                                self.available = False
-                        else:
-                            logger.info(f"✅ Model {self.model} is available")
+                        # Check text model
+                        if self.text_model in model_names:
+                            logger.info(f"✅ Text model {self.text_model} is available")
                             self.available = True
+                        else:
+                            logger.warning(f"⚠️ Text model {self.text_model} not found in Ollama")
+                            if auto_pull:
+                                logger.info(f"Attempting to pull {self.text_model}...")
+                                await self._pull_model(self.text_model)
+                            self.available = False
+                        
+                        # Check vision model
+                        if self.vision_model in model_names:
+                            logger.info(f"✅ Vision model {self.vision_model} is available")
+                            self.vision_available = True
+                        else:
+                            logger.warning(f"⚠️ Vision model {self.vision_model} not found in Ollama")
+                            self.vision_available = False
                         
                         return self.available
                     else:
@@ -72,7 +81,7 @@ class AIService:
                         return False
         except aiohttp.ClientConnectorError:
             logger.error(f"Cannot connect to Ollama at {self.ollama_url}. Is Ollama running?")
-            logger.error(f"Install Ollama from https://ollama.ai and start the service.")
+            logger.error(f"Make sure Ollama is running and accessible at {self.ollama_url}")
             self.available = False
             return False
         except Exception as e:
@@ -80,30 +89,32 @@ class AIService:
             self.available = False
             return False
     
-    async def _pull_model(self) -> bool:
+    async def _pull_model(self, model_name: str) -> bool:
         """
-        Pull the model from Ollama.
+        Pull a model from Ollama.
+        
+        Args:
+            model_name: Name of the model to pull
         
         Returns:
             True if successful, False otherwise
         """
         try:
-            logger.info(f"📥 Downloading {self.model} model...")
-            logger.info(f"⏳ This will take 5-10 minutes (model size ~5GB). Please be patient...")
+            logger.info(f"📥 Downloading {model_name} model...")
+            logger.warning(f"⚠️ Cloud models are very large and may be expensive to run!")
+            logger.info(f"⏳ This may take significant time. Please be patient...")
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     f"{self.ollama_url}/api/pull",
-                    json={'name': self.model},
-                    timeout=aiohttp.ClientTimeout(total=900)  # 15 minutes for download
+                    json={'name': model_name},
+                    timeout=aiohttp.ClientTimeout(total=3600)  # 1 hour for large cloud models
                 ) as response:
                     if response.status == 200:
                         # Show progress by reading stream
                         last_status = None
                         async for line in response.content:
                             try:
-                                # Try to parse progress info
-                                import json
                                 data = json.loads(line.decode('utf-8'))
                                 status = data.get('status', '')
                                 if status and status != last_status:
@@ -112,18 +123,17 @@ class AIService:
                             except:
                                 pass
                         
-                        logger.info(f"✅ Model {self.model} downloaded successfully!")
+                        logger.info(f"✅ Model {model_name} downloaded successfully!")
                         return True
                     else:
                         error_text = await response.text()
                         logger.error(f"❌ Failed to pull model (HTTP {response.status}): {error_text}")
                         return False
         except asyncio.TimeoutError:
-            logger.error(f"❌ Model download timeout. Please check your internet connection.")
+            logger.error(f"❌ Model download timeout.")
             return False
         except Exception as e:
             logger.error(f"❌ Error pulling model: {e}")
-            logger.error(f"💡 Try manually: ollama pull {self.model}")
             return False
     
     async def generate(self, prompt: str, system_prompt: Optional[str] = None, 
@@ -151,7 +161,7 @@ class AIService:
         
         try:
             payload = {
-                "model": self.model,
+                "model": self.text_model,
                 "prompt": prompt,
                 "stream": False,
                 "options": {
@@ -224,7 +234,7 @@ class AIService:
         
         try:
             payload = {
-                "model": self.model,
+                "model": self.text_model,
                 "messages": messages,
                 "stream": False,
                 "options": {
@@ -275,7 +285,9 @@ class AIService:
             AI analysis text
         """
         system_prompt = (
-            "You are a financial assistant helping users understand cryptocurrency and stock markets. "
+            "You are a financial assistant helping users understand cryptocurrency, stock, and fiat currency markets. "
+            "You can analyze Bitcoin (BTC), Ethereum (ETH), major stocks (AAPL, TSLA, MSFT, SBER.ME, GAZP.ME, etc.), "
+            "and fiat currencies (USD, EUR, RUB, etc.). "
             "Provide brief, clear explanations. Be helpful but remind users this is not financial advice."
         )
         
@@ -353,14 +365,18 @@ Assets breakdown:
             "1. Extract a bot command if user wants to use a feature (forecast, chart, convert, compare, etc.)\n"
             "2. Provide a helpful text response if they're asking a general question\n\n"
             "Available bot commands:\n"
-            "- FORECAST <symbol>: Show AI price forecast for cryptocurrency (e.g., BTC, ETH)\n"
-            "- CHART <symbol> <days>: Show price chart (days: 7, 30, 90, 365)\n"
-            "- CONVERT <amount> <from> <to>: Convert currency\n"
+            "- FORECAST <symbol>: Show AI price forecast for cryptocurrencies (BTC, ETH, etc.) and stocks (AAPL, TSLA, SBER.ME, etc.)\n"
+            "- CHART <symbol> <days>: Show price chart for crypto, stocks, or fiat currencies (days: 7, 30, 90, 365)\n"
+            "- CONVERT <amount> <from> <to>: Convert between crypto, fiat, or calculate stock value\n"
             "- COMPARE <symbol>: Compare prices across exchanges\n"
             "- STATS: Show user statistics\n"
-            "- NEWS: Show crypto news\n"
+            "- NEWS: Show crypto and market news\n"
             "- HELP: Show help information\n\n"
-            "If user wants to use a feature, respond with JSON: {\"command\": \"FORECAST\", \"symbol\": \"BTC\"}\n"
+            "Supported assets:\n"
+            "- Cryptocurrencies: BTC, ETH, BNB, SOL, XRP, ADA, DOGE, MATIC, DOT, AVAX, etc.\n"
+            "- Stocks: AAPL, MSFT, TSLA, NVDA, GOOGL (US), SBER.ME, GAZP.ME, LKOH.ME (Russian)\n"
+            "- Fiat: USD, EUR, RUB, CNY, GBP, JPY, etc.\n\n"
+            "If user wants to use a feature, respond with JSON: {\"command\": \"FORECAST\", \"symbol\": \"AAPL\"}\n"
             "If user asks a question, respond normally without JSON.\n\n"
             "Be concise and helpful. Language: " + ('Russian' if user_lang == 'ru' else 'English')
         )
@@ -415,17 +431,37 @@ Assets breakdown:
         
         # Forecast patterns
         if any(word in text_lower for word in ['forecast', 'прогноз', 'prediction', 'predict']):
+            # Check for crypto
             symbols = re.findall(r'\b(BTC|ETH|BNB|SOL|XRP|ADA|DOGE|MATIC|DOT|AVAX)\b', text.upper())
             if symbols:
                 return {'command': 'FORECAST', 'symbol': symbols[0]}
+            # Check for stocks
+            stock_symbols = re.findall(r'\b(AAPL|MSFT|TSLA|NVDA|GOOGL|AMZN|META|SBER|GAZP|LKOH)\b', text.upper())
+            if stock_symbols:
+                # Add .ME for Russian stocks
+                symbol = stock_symbols[0]
+                if symbol in ['SBER', 'GAZP', 'LKOH', 'GMKN', 'YNDX', 'ROSN']:
+                    symbol = f"{symbol}.ME"
+                return {'command': 'FORECAST', 'symbol': symbol, 'type': 'stock'}
         
         # Chart patterns
         if any(word in text_lower for word in ['chart', 'график', 'graph']):
+            # Check for crypto
             symbols = re.findall(r'\b(BTC|ETH|BNB|SOL|XRP|ADA|DOGE|MATIC|DOT|AVAX|CNY|USD|EUR|RUB)\b', text.upper())
             days_match = re.search(r'(\d+)\s*(day|days|дней|день)', text_lower)
             days = int(days_match.group(1)) if days_match else 30
             if symbols:
                 return {'command': 'CHART', 'symbol': symbols[0], 'days': days}
+            # Check for stocks
+            stock_symbols = re.findall(r'\b(AAPL|MSFT|TSLA|NVDA|GOOGL|AMZN|META|SBER|GAZP|LKOH|APPLE|TESLA|MICROSOFT|СБЕР|ГАЗПРОМ)\b', text.upper())
+            if stock_symbols:
+                symbol = stock_symbols[0]
+                # Map common names to tickers
+                name_map = {'APPLE': 'AAPL', 'TESLA': 'TSLA', 'MICROSOFT': 'MSFT', 'СБЕР': 'SBER', 'ГАЗПРОМ': 'GAZP'}
+                symbol = name_map.get(symbol, symbol)
+                if symbol in ['SBER', 'GAZP', 'LKOH', 'GMKN', 'YNDX', 'ROSN']:
+                    symbol = f"{symbol}.ME"
+                return {'command': 'CHART', 'symbol': symbol, 'days': days, 'type': 'stock'}
         
         # Compare patterns
         if any(word in text_lower for word in ['compare', 'сравни', 'comparison']):
@@ -566,3 +602,80 @@ Suggest 1-2 most relevant features and explain briefly how they help."""
             return result['text']
         else:
             return "Try using the main menu buttons to explore bot features."
+    
+    async def get_text_response(self, prompt: str, system_prompt: Optional[str] = None, 
+                                temperature: float = 0.7, max_tokens: int = 1000) -> str:
+        """
+        Get text response from qwen3-coder cloud model.
+        
+        Args:
+            prompt: User prompt
+            system_prompt: Optional system instructions
+            temperature: Sampling temperature (0.0-1.0)
+            max_tokens: Max tokens to generate
+        
+        Returns:
+            Text response from AI
+        """
+        result = await self.generate(prompt, system_prompt, temperature, max_tokens)
+        
+        if result.get('success'):
+            return result['text']
+        else:
+            logger.warning(f"Text generation failed: {result.get('error')}")
+            return "AI service is currently unavailable. Please try again later."
+    
+    async def get_vision_analysis(self, image_path: str, prompt: str, 
+                                  temperature: float = 0.7) -> str:
+        """
+        Analyze image using qwen3-vl vision model.
+        
+        Args:
+            image_path: Path to image file
+            prompt: Analysis prompt
+            temperature: Sampling temperature
+        
+        Returns:
+            Vision analysis text
+        """
+        if not self.vision_available:
+            logger.warning("Vision model not available")
+            return "Vision analysis is currently unavailable."
+        
+        try:
+            # Read and encode image
+            with open(image_path, 'rb') as image_file:
+                image_data = image_file.read()
+                image_base64 = base64.b64encode(image_data).decode('utf-8')
+            
+            # Prepare payload for vision model
+            payload = {
+                "model": self.vision_model,
+                "prompt": prompt,
+                "images": [image_base64],
+                "stream": False,
+                "options": {
+                    "temperature": temperature
+                }
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.ollama_url}/api/generate",
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=120)  # Vision models can be slower
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return data.get('response', '').strip()
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"Vision API error: {error_text}")
+                        return "Failed to analyze image."
+        
+        except FileNotFoundError:
+            logger.error(f"Image file not found: {image_path}")
+            return "Image file not found."
+        except Exception as e:
+            logger.error(f"Error in vision analysis: {e}")
+            return "Error analyzing image."

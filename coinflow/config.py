@@ -24,9 +24,10 @@ class Config:
     # Web App URL
     WEBAPP_URL = os.getenv('WEBAPP_URL', 'http://localhost:8000')
     
-    # Ollama AI settings (Qwen3-8B)
+    # Ollama AI settings (Qwen3 Cloud Models)
     OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434')
-    OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'qwen3:8b')  # Qwen3-8B via Ollama
+    OLLAMA_TEXT_MODEL = os.getenv('OLLAMA_TEXT_MODEL', 'qwen3-coder:480b-cloud')  # Qwen3-Coder for text
+    OLLAMA_VISION_MODEL = os.getenv('OLLAMA_VISION_MODEL', 'qwen3-vl:235b-cloud')  # Qwen3-VL for vision
     
     # Admin settings
     ADMIN_IDS = [int(x) for x in os.getenv('ADMIN_IDS', '').split(',') if x.strip()]

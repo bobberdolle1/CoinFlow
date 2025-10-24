@@ -19,7 +19,7 @@ class StocksHandler:
         self.stock_service = bot.stock_service
     
     async def show_stocks_menu(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Show main stocks menu."""
+        """Show main stocks menu (now unified without separate CBR section)."""
         user_id = update.effective_user.id
         user = self.bot.db.get_or_create_user(user_id)
         
@@ -33,24 +33,28 @@ class StocksHandler:
                 callback_data='stocks_russian'
             )],
             [InlineKeyboardButton(
-                get_text(user.lang, 'cbr_rates'), 
-                callback_data='cbr_rates'
-            )],
-            [InlineKeyboardButton(
                 get_text(user.lang, 'back'), 
                 callback_data='back_main'
             )]
         ]
         
+        message_text = (
+            f"📊 **{get_text(user.lang, 'stocks_menu')}**\n\n"
+            "Выберите категорию акций для просмотра:\n"
+            "• **Global Stocks** - Apple, Microsoft, Tesla, etc.\n"
+            "• **Russian Stocks** - Сбербанк, Газпром, Лукойл, etc.\n\n"
+            "_ЦБ РФ курсы доступны как альтернативный источник для фиатных валют_"
+        )
+        
         if update.callback_query:
             await update.callback_query.edit_message_text(
-                get_text(user.lang, 'stocks_menu'),
+                message_text,
                 reply_markup=InlineKeyboardMarkup(keyboard),
                 parse_mode='Markdown'
             )
         else:
             await update.message.reply_text(
-                get_text(user.lang, 'stocks_menu'),
+                message_text,
                 reply_markup=InlineKeyboardMarkup(keyboard),
                 parse_mode='Markdown'
             )
@@ -101,7 +105,7 @@ class StocksHandler:
         )
     
     async def show_cbr_rates(self, query, user):
-        """Show CBR exchange rates."""
+        """Show CBR exchange rates (now integrated, not separate menu)."""
         keyboard = []
         
         # Add CBR currencies
@@ -117,8 +121,15 @@ class StocksHandler:
         
         keyboard.append([InlineKeyboardButton(get_text(user.lang, 'back'), callback_data='stocks_menu')])
         
+        message_text = (
+            "💱 **Официальные курсы ЦБ РФ**\n\n"
+            "Выберите валюту для просмотра официального курса:\n\n"
+            "_Эти курсы используются как альтернативный источник данных\n"
+            "для конвертации с участием рубля (RUB)_"
+        )
+        
         await query.edit_message_text(
-            get_text(user.lang, 'cbr_rates_select'),
+            message_text,
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode='Markdown'
         )

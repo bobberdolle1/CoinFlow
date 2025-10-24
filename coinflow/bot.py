@@ -32,7 +32,15 @@ class CoinFlowBot:
         
         self.calculator = Calculator(self.converter)
         self.chart_generator = ChartGenerator(dpi=config.CHART_DPI)
-        self.prediction_generator = PredictionGenerator(dpi=config.CHART_DPI, db=self.db)
+        
+        # Initialize AI service first (needed by prediction generator)
+        self.ai_service = AIService(
+            ollama_url=config.OLLAMA_URL,
+            text_model=config.OLLAMA_TEXT_MODEL,
+            vision_model=config.OLLAMA_VISION_MODEL
+        )
+        
+        self.prediction_generator = PredictionGenerator(dpi=config.CHART_DPI, db=self.db, ai_service=self.ai_service)
         self.alert_manager = AlertManager(self.db)
         self.stock_service = StockService(cache_ttl=config.CACHE_TTL_SECONDS)
         self.cs2_service = CS2MarketService(cache_ttl=config.CACHE_TTL_SECONDS)
@@ -43,7 +51,6 @@ class CoinFlowBot:
         self.sheets_service = GoogleSheetsService(self.db)
         self.notion_service = NotionService(self.db)
         self.voice_service = VoiceService()
-        self.ai_service = AIService(ollama_url=config.OLLAMA_URL, model=config.OLLAMA_MODEL)
         self.analytics_service = AnalyticsService(self.converter, self.stock_service)
         self.trading_service = TradingSignalsService(self.stock_service)
         self.rebalance_service = RebalanceService(self.db, self.portfolio_service)
@@ -328,15 +335,21 @@ async def check_news_notifications(context, bot):
 
 
 async def initialize_ai_service(bot):
-    """Initialize AI service and download model if needed."""
+    """Initialize AI service and check cloud models availability."""
     logger.info("Checking AI service availability...")
-    is_available = await bot.ai_service.check_availability(auto_pull=True)
+    is_available = await bot.ai_service.check_availability(auto_pull=False)
     
     if is_available:
-        logger.info("✅ AI service (Qwen3-8B) is ready!")
+        logger.info("✅ AI service is ready!")
+        logger.info(f"  - Text model: {bot.ai_service.text_model}")
+        if bot.ai_service.vision_available:
+            logger.info(f"  - Vision model: {bot.ai_service.vision_model}")
+        else:
+            logger.warning("⚠️ Vision model not available - chart analysis will be limited")
     else:
         logger.warning("⚠️ AI service is not available. Bot will work without AI features.")
-        logger.warning("To enable AI: Install Ollama from https://ollama.ai")
+        logger.warning("To enable AI: Install Ollama from https://ollama.ai and pull required models")
+        logger.info(f"  Required models: {bot.ai_service.text_model}, {bot.ai_service.vision_model}")
 
 
 def setup_bot():

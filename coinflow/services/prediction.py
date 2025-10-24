@@ -1,6 +1,8 @@
-"""Price prediction service using AI models."""
+"""Price prediction service using AI models with vision analysis."""
 
 import io
+import os
+import tempfile
 import aiohttp
 import xml.etree.ElementTree as ET
 import yfinance as yf
@@ -40,9 +42,10 @@ class PredictionGenerator:
         'BYN': 'R01090'
     }
     
-    def __init__(self, dpi: int = 150, db = None):
+    def __init__(self, dpi: int = 150, db = None, ai_service = None):
         self.dpi = dpi
         self.db = db
+        self.ai_service = ai_service  # AI service for vision analysis
     
     async def fetch_cbr_historical_rates(self, currency: str, days: int = 90) -> List[Tuple[datetime, float]]:
         """
@@ -584,3 +587,81 @@ class PredictionGenerator:
         except Exception as e:
             logger.error(f"Stock prediction generation error for {ticker}: {e}", exc_info=True)
             return None, {'error': 'exception', 'pair': ticker, 'message': str(e)}
+    
+    async def generate_prediction_with_vision_analysis(self, symbol: str, asset_type: str = 'crypto',
+                                                       model_type: str = 'arima', days: int = 90,
+                                                       forecast_days: int = 7) -> Tuple[Optional[bytes], Dict, Optional[str]]:
+        """
+        Generate prediction with AI vision analysis of the chart.
+        
+        Args:
+            symbol: Asset symbol (e.g., 'BTC-USD', 'AAPL', 'SBER.ME')
+            asset_type: 'crypto', 'stock', or 'cbr'
+            model_type: 'arima', 'linear', or 'prophet'
+            days: Historical days to analyze
+            forecast_days: Days to forecast ahead
+        
+        Returns:
+            Tuple of (image bytes, statistics dict, vision analysis text)
+        """
+        try:
+            # Generate standard prediction
+            if asset_type == 'cbr':
+                chart_bytes, stats = await self.generate_cbr_prediction(symbol, model_type, days, forecast_days)
+            elif asset_type == 'stock':
+                chart_bytes, stats = self.generate_stock_prediction(symbol, model_type, days, forecast_days)
+            else:  # crypto
+                chart_bytes, stats = self.generate_prediction(symbol, model_type, days, forecast_days)
+            
+            if not chart_bytes or 'error' in stats:
+                logger.warning(f"Failed to generate base prediction for {symbol}")
+                return chart_bytes, stats, None
+            
+            # If AI service is not available, return without vision analysis
+            if not self.ai_service or not self.ai_service.vision_available:
+                logger.info("Vision analysis not available, returning standard prediction")
+                return chart_bytes, stats, None
+            
+            # Save chart to temporary file for vision analysis
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.png', delete=False) as tmp_file:
+                tmp_file.write(chart_bytes)
+                tmp_path = tmp_file.name
+            
+            try:
+                # Prepare vision analysis prompt
+                vision_prompt = f"""
+Analyze this price forecast chart for {symbol}.
+
+Key information:
+- Current price: ${stats.get('current', 0):,.2f}
+- Predicted price ({forecast_days} days): ${stats.get('predicted', 0):,.2f}
+- Expected change: {stats.get('change', 0):+.2f}%
+- Model used: {stats.get('model', 'Unknown')}
+- Trend: {stats.get('trend', 'Unknown')}
+
+Provide a brief analysis (3-4 sentences) covering:
+1. What the chart pattern suggests about the trend
+2. Key support/resistance levels visible
+3. Overall outlook for the next {forecast_days} days
+4. Important disclaimer about forecast reliability
+
+Keep it concise and educational.
+"""
+                
+                # Get vision analysis
+                logger.info(f"Requesting vision analysis for {symbol}...")
+                vision_analysis = await self.ai_service.get_vision_analysis(tmp_path, vision_prompt)
+                
+                logger.info(f"Vision analysis completed for {symbol}")
+                return chart_bytes, stats, vision_analysis
+            
+            finally:
+                # Clean up temporary file
+                try:
+                    os.unlink(tmp_path)
+                except:
+                    pass
+        
+        except Exception as e:
+            logger.error(f"Error in prediction with vision analysis for {symbol}: {e}", exc_info=True)
+            return None, {'error': 'exception', 'pair': symbol, 'message': str(e)}, None
