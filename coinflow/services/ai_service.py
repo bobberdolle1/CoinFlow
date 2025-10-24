@@ -5,6 +5,7 @@ import json
 import re
 import base64
 from typing import Optional, List, Dict, Tuple, Any
+from datetime import datetime
 import aiohttp
 from ..utils.logger import setup_logger
 
@@ -391,21 +392,40 @@ Assets breakdown:
         else:
             return "AI analysis unavailable."
     
-    async def interpret_user_message(self, message: str, user_lang: str = 'en') -> Dict[str, Any]:
+    async def interpret_user_message(self, message: str, user_lang: str = 'en', news_context: Optional[List] = None) -> Dict[str, Any]:
         """
         Interpret user message and extract command or provide text response.
         
         Args:
             message: User's message
             user_lang: User's language (en/ru)
+            news_context: Optional list of recent news items for context
         
         Returns:
             Dict with 'type' ('command' or 'text'), 'action', 'params', and 'response'
         """
+        # Get current date and time
+        now = datetime.now()
+        current_date = now.strftime('%Y-%m-%d')
+        current_time = now.strftime('%H:%M')
+        current_year = now.year
+        
+        # Build news context string
+        news_str = ""
+        if news_context:
+            news_str = "\n\nLatest financial news:\n"
+            for idx, news in enumerate(news_context[:5], 1):
+                news_str += f"{idx}. {news.get('title', 'N/A')}\n"
+        
         system_prompt = (
             "You are an intelligent assistant for CoinFlow Bot. Your job is to interpret user requests and either:\n"
             "1. Extract a bot command if user wants to use a feature (forecast, chart, convert, compare, etc.)\n"
             "2. Provide a helpful text response if they're asking a general question\n\n"
+            f"CURRENT CONTEXT:\n"
+            f"Today's date: {current_date}\n"
+            f"Current time: {current_time}\n"
+            f"Year: {current_year}\n"
+            f"{news_str}\n"
             "Available bot commands:\n"
             "- FORECAST <symbol>: Show AI price forecast for cryptocurrencies (BTC, ETH, etc.) and stocks (AAPL, TSLA, SBER.ME, etc.)\n"
             "- CHART <symbol> <days>: Show price chart for crypto, stocks, or fiat currencies (days: 7, 30, 90, 365)\n"
@@ -420,7 +440,8 @@ Assets breakdown:
             "- Fiat: USD, EUR, RUB, CNY, GBP, JPY, etc.\n\n"
             "If user wants to use a feature, respond with JSON: {\"command\": \"FORECAST\", \"symbol\": \"AAPL\"}\n"
             "If user asks a question, respond normally without JSON.\n\n"
-            "Be concise and helpful. Language: " + ('Russian' if user_lang == 'ru' else 'English')
+            "IMPORTANT: Always respond in the user's language. "
+            "Language: " + ('Russian' if user_lang == 'ru' else 'English')
         )
         
         result = await self.generate(message, system_prompt=system_prompt, temperature=0.3, max_tokens=300)
@@ -585,7 +606,7 @@ Keep it brief and educational."""
                 f"not financial advice."
             )
     
-    async def answer_question(self, question: str, context: str = None, user_lang: str = 'en') -> str:
+    async def answer_question(self, question: str, context: str = None, user_lang: str = 'en', news_context: Optional[List] = None) -> str:
         """
         Answer user's question about finance/crypto.
         
@@ -593,14 +614,33 @@ Keep it brief and educational."""
             question: User's question
             context: Optional context
             user_lang: User language
+            news_context: Optional list of recent news for context
         
         Returns:
             AI answer
         """
+        # Get current date and time
+        now = datetime.now()
+        current_date = now.strftime('%Y-%m-%d')
+        current_time = now.strftime('%H:%M')
+        current_year = now.year
+        
+        # Build news context
+        news_str = ""
+        if news_context:
+            news_str = "\n\nLatest financial news (use this to provide current market context):\n"
+            for idx, news in enumerate(news_context[:5], 1):
+                news_str += f"{idx}. {news.get('title', 'N/A')}\n"
+        
         system_prompt = (
             "You are a helpful financial assistant for CoinFlow Bot. "
             "Answer questions about cryptocurrencies, stocks, and financial markets. "
-            "Be concise, accurate, and friendly. Always remind users that this is educational, not financial advice. "
+            "Be concise, accurate, and friendly. Always remind users that this is educational, not financial advice. \n\n"
+            f"CURRENT CONTEXT:\n"
+            f"Today's date: {current_date}\n"
+            f"Current time: {current_time}\n"
+            f"Year: {current_year}\n"
+            f"{news_str}\n"
             f"Language: {'Russian' if user_lang == 'ru' else 'English'}."
         )
         

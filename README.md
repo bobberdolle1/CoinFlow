@@ -1,6 +1,6 @@
-# 🪙 CoinFlow Bot v3.1 - AI-Powered Investment Consultant
+# 🪙 CoinFlow Bot v3.2 - AI-Powered Investment Consultant
 
-![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-3.1-orange.svg) ![AI](https://img.shields.io/badge/AI-Qwen3--Cloud-purple.svg) ![Vision](https://img.shields.io/badge/Vision-Qwen3--VL-blueviolet.svg)
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-3.2-orange.svg) ![AI](https://img.shields.io/badge/AI-Qwen3--Cloud-purple.svg) ![Vision](https://img.shields.io/badge/Vision-Qwen3--VL-blueviolet.svg)
 
 **Personal Investment Consultant with AI, advanced analytics, trading signals, and portfolio optimization**
 
@@ -32,7 +32,29 @@
 
 **Key Innovation:** 100% button-based interface — no manual typing required! Get conversions in just 2-3 clicks.
 
-### 🚀 User Experience (v2.0)
+### ✨ What's New in v3.2 (Critical Update)
+
+**🔧 Stability & Localization Release:**
+
+- ✅ **CS2 Market Complete Rebuild:** 6-level hierarchical navigation (Categories → Weapons → Models → Souvenir → Quality → Wear → Item)
+- ✅ **Full Localization:** All UI elements, buttons, and AI responses now fully localized (EN/RU)
+- ✅ **"Forecast" Button Renamed:** From "Rate Forecast" to "Прогноз"/"Forecast"
+- ✅ **AI Context Awareness:** AI now knows current date/time and latest financial news
+- ✅ **Typing Indicators Restored:** Visual feedback during AI response generation
+- ✅ **CS2 Pagination:** Browse large item lists (8 items per page) with smooth navigation
+- ✅ **Currency Conversion Verified:** All API integrations tested and stabilized
+- ✅ **Back Buttons Everywhere:** Intuitive navigation at every CS2 level
+
+**📊 CS2 Market Features:**
+- 19 knife models (Karambit, M9, Butterfly, etc.)
+- 8 glove types (Sport, Driver, Moto, etc.)
+- All major weapons (AK-47, AWP, M4A4, etc.)
+- Quality levels with color indicators
+- Wear conditions with float ranges
+- Prices in USD and RUB
+- Search functionality
+
+### 🚀 User Experience
 
 **Complete button-based workflow:**
 
@@ -40,7 +62,7 @@
 
 2. **Rate Charts** → Select crypto → Select period (7/30/90/365 days) → **See price chart for 1 unit** (e.g., 1 BTC = $67,234)
 
-3. **Rate Forecast** → Select crypto → **Get AI prediction for 1 unit** (7-day forecast with trend)
+3. **Forecast** → Select crypto → **Get AI prediction for 1 unit** (7-day forecast with trend)
 
 4. **Compare Rates** → Select crypto → **See prices for 1 unit across 5+ exchanges** with best price recommendation
 

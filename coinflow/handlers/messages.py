@@ -305,6 +305,11 @@ class MessageHandlers:
                 await self.bot.ai_handler.process_suggestion_request(update, text)
                 del self.bot.temp_storage[user_id]
                 return
+            # Check if waiting for CS2 search input
+            elif temp_data and temp_data.get('state') == 'awaiting_cs2_search':
+                await self.bot.cs2_handler.handle_search_query(update, context, text)
+                del self.bot.temp_storage[user_id]
+                return
             
             # AI Chat mode - Default behavior for non-command messages
             await self.handle_ai_chat(update, context, text, user)
@@ -507,8 +512,17 @@ class MessageHandlers:
         await update.message.chat.send_action('typing')
         
         try:
+            # Fetch latest news for context
+            news_context = None
+            try:
+                latest_news = await self.bot.news_service.fetch_news(max_age_hours=24)
+                if latest_news:
+                    news_context = [{'title': news.title} for news in latest_news[:5]]
+            except Exception as e:
+                logger.debug(f"Failed to fetch news context: {e}")
+            
             # Interpret user message with Qwen3-8B
-            interpretation = await self.bot.ai_service.interpret_user_message(text, user.lang)
+            interpretation = await self.bot.ai_service.interpret_user_message(text, user.lang, news_context)
             
             if interpretation['type'] == 'error':
                 await update.message.reply_text(
