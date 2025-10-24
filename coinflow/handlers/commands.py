@@ -45,7 +45,7 @@ class CommandHandlers:
         user = self.bot.db.get_or_create_user(user_id)
         
         help_text = (
-            "🆘 *CoinFlow Bot v2.7 - Help*\n\n"
+            "🆘 *CoinFlow Bot v3.1.0 - Help*\n\n"
             "*💱 Basic Features:*\n"
             "• Quick currency conversion\n"
             "• 60+ currencies (fiat + crypto)\n"
