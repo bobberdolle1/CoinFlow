@@ -1,6 +1,6 @@
-# 🪙 CoinFlow Bot v3.0 - AI-Powered Investment Consultant
+# 🪙 CoinFlow Bot v3.1 - AI-Powered Investment Consultant
 
-![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-3.0-orange.svg) ![AI](https://img.shields.io/badge/AI-Qwen3--8B-purple.svg)
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg) ![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg) ![Version](https://img.shields.io/badge/Version-3.1-orange.svg) ![AI](https://img.shields.io/badge/AI-Qwen3--Cloud-purple.svg) ![Vision](https://img.shields.io/badge/Vision-Qwen3--VL-blueviolet.svg)
 
 **Personal Investment Consultant with AI, advanced analytics, trading signals, and portfolio optimization**
 
@@ -12,7 +12,7 @@
 
 ## 🇬🇧 English
 
-**CoinFlow** is your ultimate Telegram-based financial assistant powered by **Qwen3-8B AI** that combines:
+**CoinFlow** is your ultimate Telegram-based financial assistant powered by **Qwen3 Cloud Models** that combines:
 - 💱 Advanced multi-source currency converter (60+ currencies)
 - 🪙 **50+ cryptocurrencies** including TON, NOT, PEPE, FLOKI, BONK, WIF, ARB, OP
 - 📊 Real-time crypto analysis from 5+ exchanges (Binance, Bybit, HTX, KuCoin, Gate.io)
@@ -22,8 +22,10 @@
 - 💼 **Portfolio management** with real-time valuation (crypto/stocks/fiat/CS2)
 - 📊 **Portfolio visualization** with interactive pie charts
 - 📤 **Data export** to CSV & ZIP (portfolio, alerts, history)
-- 🤖 **AI Assistant** with Qwen3-8B via Ollama (local, privacy-first)
-- 🔮 AI-powered price forecasting (ARIMA & Linear Regression)
+- 🤖 **AI Assistant** with Qwen3-Coder 480B via Ollama (cloud-powered text generation)
+- 👁️ **Vision Analysis** with Qwen3-VL 235B for chart interpretation
+- 🔮 **AI-powered forecasting** (ARIMA, Linear Regression + AI visual analysis)
+- 📈 **Smart stock support** - AI understands queries for AAPL, TSLA, SBER.ME and more
 - 📈 Interactive charts with Dark/Light themes
 - 🧮 Built-in calculator with currency conversion support
 - 🔔 Automated price alerts and notifications
@@ -171,6 +173,31 @@
 - 🔒 **Access Control**: Admin-only access via ADMIN_IDS
 - 📈 **Detailed Metrics**: Activity tracking (24h/7d/30d), language distribution
 
+### 🆕 What's New in v3.1
+
+**🤖 AI Vision & Advanced Analytics**
+- 👁️ **Qwen3-VL 235B Vision Model**: AI analyzes chart patterns and trends visually
+- 🔮 **Enhanced Forecasting**: Combines numerical predictions (ARIMA/LinReg) with AI visual analysis
+- 📊 **Chart Interpretation**: AI provides insights on support/resistance levels, patterns, and outlook
+- 🧠 **32K Token Context**: Larger context window for complex conversations
+
+**📈 Expanded Stock Market Support**
+- 🎯 **AI Stock Understanding**: Natural language queries like "Show me Apple chart" or "Forecast Tesla"
+- 🏢 **Stock Integration**: AAPL, MSFT, TSLA, NVDA, GOOGL (US) + SBER.ME, GAZP.ME (Russia)
+- 🔍 **Ticker Recognition**: Supports alternative names (Apple→AAPL, Сбер→SBER.ME)
+- 💬 **Voice Commands**: Speak stock queries naturally
+
+**🔧 Unified Architecture**
+- 💱 **CBR Integration**: Central Bank of Russia rates now alternative data source (no separate section)
+- 🎯 **Stocks as First-Class Assets**: Equal status with crypto and fiat
+- 📊 **Consistent Experience**: Same features for all asset types
+
+**🚀 Cloud-Powered AI**
+- ☁️ **Qwen3-Coder 480B**: Advanced text and code generation
+- 👁️ **Qwen3-VL 235B**: Computer vision for chart analysis
+- 🔄 **Dual Model Architecture**: Specialized models for different tasks
+- 📚 **See Documentation**: [QWEN3_INTEGRATION_GUIDE.md](./docs/QWEN3_INTEGRATION_GUIDE.md), [STOCKS_INTEGRATION.md](./docs/STOCKS_INTEGRATION.md)
+
 ### 🆕 What's New in v3.0
 
 **Enhanced Crypto Coverage 🪙**
@@ -185,33 +212,45 @@
 - ⚡ **Automatic Path Finding**: Smart conversion through best available route
 
 **AI Upgrade 🤖**
-- 🧠 **Qwen3-8B Integration**: Upgraded from Llama 3.2 3B for better multilingual support
+- ☁️ **Qwen3 Cloud Models**: Upgraded to powerful 480B text and 235B vision models
+- 🧠 **Qwen3-Coder 480B**: Advanced text generation, code understanding, command interpretation
+- 👁️ **Qwen3-VL 235B**: Computer vision for chart analysis and pattern recognition
 - 🇷🇺 **Enhanced Russian**: Improved understanding of Russian financial queries
 - 💬 **Natural Language**: Supports voice messages and text commands
-- 🔒 **Privacy-First**: All AI processing runs locally via Ollama
-- 🎯 **Context-Aware**: Better conversation flow and memory
+- 📈 **Stock Queries**: AI understands "Show Tesla chart", "Forecast Apple", etc.
+- 🎯 **32K Context**: Larger context for complex conversations
 
 **Technical Improvements 🛠️**
 - 🐍 **Python 3.12**: Updated from 3.11 for better performance
 - 🐳 **Optimized Docker**: Multi-stage build, smaller images, faster startup
 - 📦 **Latest Dependencies**: All packages updated to newest stable versions
 - 🔧 **Improved Error Handling**: Better BadRequest handling for Telegram API
+- 🏗️ **Dual AI Architecture**: Separate text and vision models
 
-**Setup Qwen3-8B:**
+**Setup Qwen3 Cloud Models:**
 ```bash
 # Install Ollama
 curl https://ollama.ai/install.sh | sh
 
-# Pull Qwen3-8B
+# Pull cloud models (WARNING: Very large - 480GB + 235GB!)
+# For production:
+ollama pull qwen3-coder:480b-cloud
+ollama pull qwen3-vl:235b-cloud
+
+# For local testing (smaller models):
 ollama pull qwen3:8b
+ollama pull llava:7b
 ```
 
 **AI Features:**
 - Natural language currency conversion
 - Market analysis and insights
+- **NEW:** Visual chart analysis and pattern recognition
+- **NEW:** Stock price forecasts with AI commentary
 - Portfolio recommendations
 - Voice message support
 - Multilingual (EN/RU) understanding
+- **NEW:** Support/resistance level identification
 
 ### 🆕 What's New in v2.5
 
@@ -414,8 +453,9 @@ ollama pull qwen3:8b
 - Docker & docker-compose
 
 **AI:**
-- Ollama (local LLM runtime)
-- Qwen3-8B model (via Ollama)
+- Ollama (LLM runtime)
+- Qwen3-Coder 480B-cloud (text/code generation)
+- Qwen3-VL 235B-cloud (vision analysis)
 
 **Dependency Management:** Poetry
 
@@ -434,7 +474,7 @@ ollama pull qwen3:8b
 - 📊 **Reports**: Analytics reports and weekly digests
 - 📊 **Analytics**: Advanced volatility, Sharpe ratio, correlation analysis
 - 🎯 **Trading Signals**: RSI, MACD, Moving Averages, Bollinger Bands
-- 🤖 **AI Assistant**: Chat with Llama 3.2 3B (local LLM)
+- 🤖 **AI Assistant**: Chat with Qwen3-Coder 480B (cloud LLM with vision)
 - 🌐 **Dashboard**: Web-based interactive dashboard
 - 🧮 **Calculator**: Math expressions with currency conversion
 - 🔔 **Notifications**: Manage price alerts
@@ -468,6 +508,8 @@ Complete guides for deployment and troubleshooting:
 - [🐳 Docker Guide](./docs/DOCKER_GUIDE.md) - Deploy with Docker
 - [🚀 Deployment Guide](./docs/DEPLOYMENT.md) - Production setup ([Russian version](./docs/DEPLOYMENT.md#russian))
 - [🔧 Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues ([Russian version](./docs/TROUBLESHOOTING.md#russian))
+- [🤖 Qwen3 Integration Guide](./docs/QWEN3_INTEGRATION_GUIDE.md) - **NEW!** Setup cloud AI models
+- [📈 Stocks Integration](./docs/STOCKS_INTEGRATION.md) - **NEW!** Work with stocks
 
 ---
 
@@ -479,7 +521,9 @@ Complete guides for deployment and troubleshooting:
 - Python 3.12 or higher
 - Poetry (Python dependency manager)
 - Telegram Bot Token from [@BotFather](https://t.me/BotFather)
-- Ollama with Qwen3-8B model (optional, for AI features)
+- Ollama with Qwen3 models (optional, for AI features)
+  - For testing: qwen3:8b (smaller, local)
+  - For production: qwen3-coder:480b-cloud + qwen3-vl:235b-cloud (large, powerful)
 
 #### **Quick Start**
 
@@ -510,9 +554,14 @@ Complete guides for deployment and troubleshooting:
    # Optional: Add your Telegram ID for admin access
    ADMIN_IDS=YOUR_TELEGRAM_ID_HERE
    
-   # Optional: Ollama AI settings (for AI Assistant with Qwen3-8B)
+   # Optional: Ollama AI settings (for AI Assistant with Qwen3 Cloud Models)
    OLLAMA_URL=http://localhost:11434
-   OLLAMA_MODEL=qwen3:8b
+   OLLAMA_TEXT_MODEL=qwen3-coder:480b-cloud
+   OLLAMA_VISION_MODEL=qwen3-vl:235b-cloud
+   
+   # For local testing, use smaller models:
+   # OLLAMA_TEXT_MODEL=qwen3:8b
+   # OLLAMA_VISION_MODEL=llava:7b
    ```
 
 4. **Install dependencies:**
@@ -548,7 +597,7 @@ python main.py
 
 ## 🇷🇺 Русский
 
-**CoinFlow** — ваш персональный финансовый ассистент в Telegram, который объединяет:
+**CoinFlow** — ваш персональный финансовый ассистент в Telegram на базе **облачных моделей Qwen3**, который объединяет:
 - 💱 Продвинутый конвертер валют с множественными источниками (60+ валют)
 - 📊 Анализ криптовалют в реальном времени с 5+ бирж
 - 📈 Аналитика глобального и российского фондового рынка (35+ акций)
@@ -556,8 +605,11 @@ python main.py
 - 💼 **Управление портфелем** с оценкой в реальном времени (крипта/акции/фиат/CS2)
 - 📊 **Визуализация портфеля** с интерактивными круговыми диаграммами
 - 📤 **Экспорт данных** в CSV и ZIP (портфель, алерты, история)
-- 🔮 ИИ-прогнозирование цен (ARIMA и Линейная Регрессия)
-- 📈 Интерактивные графики с темами Dark/Light
+- 🤖 **ИИ-ассистент** с Qwen3-Coder 480B (облачная генерация текста)
+- 👁️ **Визуальный анализ** с Qwen3-VL 235B для интерпретации графиков
+- 🔮 **ИИ-прогнозирование** (ARIMA, Линейная Регрессия + визуальный анализ ИИ)
+- 📈 **Поддержка акций** - ИИ понимает запросы об AAPL, TSLA, SBER.ME
+- 📊 Интерактивные графики с темами Dark/Light
 - 🧮 Встроенный калькулятор с конвертацией валют
 - 🔔 Автоматические уведомления о ценах
 
@@ -697,9 +749,12 @@ python main.py
 > 📦 **Впервые устанавливаете?** Смотрите [Полное руководство по установке](./docs/INSTALLATION.md#русский) с пошаговыми инструкциями, включая установку Python, Poetry и Docker с нуля!
 
 #### **Требования**
-- Python 3.11 или выше
+- Python 3.12 или выше
 - Poetry (менеджер зависимостей Python)
 - Токен Telegram-бота от [@BotFather](https://t.me/BotFather)
+- Ollama с моделями Qwen3 (опционально, для ИИ-функций)
+  - Для тестирования: qwen3:8b (меньше, локально)
+  - Для продакшена: qwen3-coder:480b-cloud + qwen3-vl:235b-cloud (большие, мощные)
 
 #### **Быстрый старт**
 
@@ -723,9 +778,18 @@ python main.py
    cp .env.example .env
    ```
    
-   Отредактируйте `.env` и добавьте токен вашего бота:
+   Отредактируйте `.env` и настройте:
    ```env
    TELEGRAM_BOT_TOKEN='ВАШ_РЕАЛЬНЫЙ_ТОКЕН_БОТА_ЗДЕСЬ'
+   
+   # Опционально: Настройки Ollama AI (для облачных моделей Qwen3)
+   OLLAMA_URL=http://localhost:11434
+   OLLAMA_TEXT_MODEL=qwen3-coder:480b-cloud
+   OLLAMA_VISION_MODEL=qwen3-vl:235b-cloud
+   
+   # Для локального тестирования используйте меньшие модели:
+   # OLLAMA_TEXT_MODEL=qwen3:8b
+   # OLLAMA_VISION_MODEL=llava:7b
    ```
 
 4. **Установите зависимости:**
