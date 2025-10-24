@@ -180,18 +180,40 @@ class AIService:
                     timeout=aiohttp.ClientTimeout(total=60)
                 ) as response:
                     if response.status == 200:
-                        data = await response.json()
+                        # Check Content-Type before parsing JSON
+                        content_type = response.headers.get('Content-Type', '')
                         
-                        return {
-                            'success': True,
-                            'text': data.get('response', '').strip(),
-                            'model': data.get('model'),
-                            'total_duration': data.get('total_duration', 0) / 1e9,  # Convert to seconds
-                            'eval_count': data.get('eval_count', 0)
-                        }
+                        if 'application/json' in content_type:
+                            data = await response.json()
+                            
+                            return {
+                                'success': True,
+                                'text': data.get('response', '').strip(),
+                                'model': data.get('model'),
+                                'total_duration': data.get('total_duration', 0) / 1e9,  # Convert to seconds
+                                'eval_count': data.get('eval_count', 0)
+                            }
+                        else:
+                            # Ollama returned non-JSON response (likely error message)
+                            error_text = await response.text()
+                            logger.error(f"Ollama returned non-JSON response: {error_text}")
+                            
+                            # Check if model not found
+                            if 'not found' in error_text.lower() or 'model' in error_text.lower():
+                                return {
+                                    'success': False,
+                                    'error': 'model_not_found',
+                                    'message': f'Model {self.text_model} not found. Please run: ollama pull {self.text_model}'
+                                }
+                            
+                            return {
+                                'success': False,
+                                'error': 'invalid_response',
+                                'message': f'Ollama returned unexpected response: {error_text[:200]}'
+                            }
                     else:
                         error_text = await response.text()
-                        logger.error(f"Ollama API error: {error_text}")
+                        logger.error(f"Ollama API error (HTTP {response.status}): {error_text}")
                         return {
                             'success': False,
                             'error': f"API error: {response.status}",
@@ -246,28 +268,51 @@ class AIService:
                 async with session.post(
                     f"{self.ollama_url}/api/chat",
                     json=payload,
-                    timeout=aiohttp.ClientTimeout(total=60)
+                    timeout=aiohttp.ClientTimeout(total=90)
                 ) as response:
                     if response.status == 200:
-                        data = await response.json()
+                        # Check Content-Type before parsing JSON
+                        content_type = response.headers.get('Content-Type', '')
                         
-                        return {
-                            'success': True,
-                            'message': data.get('message', {}),
-                            'text': data.get('message', {}).get('content', '').strip(),
-                            'total_duration': data.get('total_duration', 0) / 1e9
-                        }
+                        if 'application/json' in content_type:
+                            data = await response.json()
+                            
+                            return {
+                                'success': True,
+                                'message': data.get('message', {}),
+                                'text': data.get('message', {}).get('content', '').strip(),
+                                'total_duration': data.get('total_duration', 0) / 1e9
+                            }
+                        else:
+                            error_text = await response.text()
+                            logger.error(f"Ollama chat returned non-JSON: {error_text}")
+                            return {
+                                'success': False,
+                                'error': 'invalid_response',
+                                'message': f'Unexpected response format: {error_text[:200]}'
+                            }
                     else:
+                        error_text = await response.text()
+                        logger.error(f"Ollama chat API error (HTTP {response.status}): {error_text}")
                         return {
                             'success': False,
-                            'error': f"API error: {response.status}"
+                            'error': f"API error: {response.status}",
+                            'message': error_text
                         }
         
+        except asyncio.TimeoutError:
+            logger.error("Ollama chat request timeout")
+            return {
+                'success': False,
+                'error': 'timeout',
+                'message': 'Chat request took too long'
+            }
         except Exception as e:
             logger.error(f"Error in chat: {e}")
             return {
                 'success': False,
-                'error': str(e)
+                'error': 'exception',
+                'message': str(e)
             }
     
     async def analyze_market(self, asset: str, price: float, change_24h: float, 
@@ -666,11 +711,22 @@ Suggest 1-2 most relevant features and explain briefly how they help."""
                     timeout=aiohttp.ClientTimeout(total=120)  # Vision models can be slower
                 ) as response:
                     if response.status == 200:
-                        data = await response.json()
-                        return data.get('response', '').strip()
+                        content_type = response.headers.get('Content-Type', '')
+                        
+                        if 'application/json' in content_type:
+                            data = await response.json()
+                            return data.get('response', '').strip()
+                        else:
+                            error_text = await response.text()
+                            logger.error(f"Vision API returned non-JSON: {error_text}")
+                            
+                            if 'not found' in error_text.lower():
+                                return f"Vision model {self.vision_model} not found. Please install it first."
+                            
+                            return "Failed to analyze image: Unexpected response format."
                     else:
                         error_text = await response.text()
-                        logger.error(f"Vision API error: {error_text}")
+                        logger.error(f"Vision API error (HTTP {response.status}): {error_text}")
                         return "Failed to analyze image."
         
         except FileNotFoundError:
