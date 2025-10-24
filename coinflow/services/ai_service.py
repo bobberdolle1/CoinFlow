@@ -138,7 +138,7 @@ class AIService:
             return False
     
     async def generate(self, prompt: str, system_prompt: Optional[str] = None, 
-                      temperature: float = 0.7, max_tokens: int = 500) -> Dict:
+                      temperature: float = 0.7, max_tokens: int = 800) -> Dict:
         """
         Generate response from AI model.
         
@@ -343,9 +343,9 @@ Current Price: ${price:,.2f}
         if user_query:
             prompt += f"User question: {user_query}\n\n"
         
-        prompt += "Provide a brief analysis (2-3 sentences)."
+        prompt += "Provide a detailed analysis (3-5 sentences)."
         
-        result = await self.generate(prompt, system_prompt=system_prompt, temperature=0.5, max_tokens=200)
+        result = await self.generate(prompt, system_prompt=system_prompt, temperature=0.5, max_tokens=800)
         
         if result.get('success'):
             return result['text']
@@ -383,9 +383,9 @@ Assets breakdown:
         if user_query:
             prompt += f"\nUser question: {user_query}\n"
         
-        prompt += "\nProvide brief portfolio analysis (3-4 sentences)."
+        prompt += "\nProvide detailed portfolio analysis (4-6 sentences)."
         
-        result = await self.generate(prompt, system_prompt=system_prompt, temperature=0.6, max_tokens=300)
+        result = await self.generate(prompt, system_prompt=system_prompt, temperature=0.6, max_tokens=800)
         
         if result.get('success'):
             return result['text']
@@ -593,9 +593,9 @@ Explain:
 2. What this means for {symbol}
 3. Key disclaimer
 
-Keep it brief and educational."""
+Keep it educational and informative."""
         
-        result = await self.generate(prompt, system_prompt=system_prompt, temperature=0.6, max_tokens=250)
+        result = await self.generate(prompt, system_prompt=system_prompt, temperature=0.6, max_tokens=600)
         
         if result.get('success'):
             return result['text']
@@ -648,7 +648,7 @@ Keep it brief and educational."""
         if context:
             prompt = f"Context: {context}\n\nQuestion: {question}"
         
-        result = await self.generate(prompt, system_prompt=system_prompt, temperature=0.7, max_tokens=400)
+        result = await self.generate(prompt, system_prompt=system_prompt, temperature=0.7, max_tokens=3000)
         
         if result.get('success'):
             return result['text']
