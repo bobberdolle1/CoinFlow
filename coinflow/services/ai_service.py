@@ -180,10 +180,9 @@ class AIService:
                     timeout=aiohttp.ClientTimeout(total=60)
                 ) as response:
                     if response.status == 200:
-                        # Check Content-Type before parsing JSON
-                        content_type = response.headers.get('Content-Type', '')
-                        
-                        if 'application/json' in content_type:
+                        # Try to parse as JSON regardless of Content-Type
+                        # (Ollama sometimes returns JSON with text/plain Content-Type)
+                        try:
                             data = await response.json()
                             
                             return {
@@ -193,8 +192,8 @@ class AIService:
                                 'total_duration': data.get('total_duration', 0) / 1e9,  # Convert to seconds
                                 'eval_count': data.get('eval_count', 0)
                             }
-                        else:
-                            # Ollama returned non-JSON response (likely error message)
+                        except (json.JSONDecodeError, aiohttp.ContentTypeError):
+                            # If JSON parsing fails, try as text
                             error_text = await response.text()
                             logger.error(f"Ollama returned non-JSON response: {error_text}")
                             
@@ -271,10 +270,8 @@ class AIService:
                     timeout=aiohttp.ClientTimeout(total=90)
                 ) as response:
                     if response.status == 200:
-                        # Check Content-Type before parsing JSON
-                        content_type = response.headers.get('Content-Type', '')
-                        
-                        if 'application/json' in content_type:
+                        # Try to parse as JSON regardless of Content-Type
+                        try:
                             data = await response.json()
                             
                             return {
@@ -283,7 +280,7 @@ class AIService:
                                 'text': data.get('message', {}).get('content', '').strip(),
                                 'total_duration': data.get('total_duration', 0) / 1e9
                             }
-                        else:
+                        except (json.JSONDecodeError, aiohttp.ContentTypeError):
                             error_text = await response.text()
                             logger.error(f"Ollama chat returned non-JSON: {error_text}")
                             return {
@@ -711,12 +708,11 @@ Suggest 1-2 most relevant features and explain briefly how they help."""
                     timeout=aiohttp.ClientTimeout(total=120)  # Vision models can be slower
                 ) as response:
                     if response.status == 200:
-                        content_type = response.headers.get('Content-Type', '')
-                        
-                        if 'application/json' in content_type:
+                        # Try to parse as JSON regardless of Content-Type
+                        try:
                             data = await response.json()
                             return data.get('response', '').strip()
-                        else:
+                        except (json.JSONDecodeError, aiohttp.ContentTypeError):
                             error_text = await response.text()
                             logger.error(f"Vision API returned non-JSON: {error_text}")
                             
